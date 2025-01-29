@@ -44,21 +44,18 @@ def process_instagram_files(directory):
                 try:
                     data = json.load(file)
                     # Extract timestamp and convert to year
-                    timestamp = data["node"]["taken_at_timestamp"]
+                    timestamp = data["node"]["date"]
+                    date_obj = datetime.fromtimestamp(timestamp)
+                    date = date_obj.strftime("%d.%m.%Y")
                     year = datetime.fromtimestamp(timestamp).year
-
+                    print(date)
                     # Extract required fields
                     post = {
-                        "caption": (
-                            data["node"]["edge_media_to_caption"]["edges"][0]["node"][
-                                "text"
-                            ]
-                            if data["node"]["edge_media_to_caption"]["edges"]
-                            else ""
-                        ),
+                        "caption": data["node"]["caption"],
                         "comments": data["node"]["comments"],
                         "like_count": data["node"]["edge_media_preview_like"]["count"],
                         "shortcode": data["node"]["shortcode"],
+                        "date": date,
                         "timestamp": timestamp,
                         "images": [],
                     }
@@ -79,7 +76,7 @@ def process_instagram_files(directory):
                             post["images"].append(os.path.abspath(image_path))
                         else:
                             break
-                    
+
                     posts_by_year[year].append(post)
                 except (KeyError, json.JSONDecodeError) as e:
                     print(f"\nError processing {filename}: {str(e)}")
@@ -101,136 +98,8 @@ def generate_html_pages(posts_by_year):
 
     # Set up Jinja2 environment
     env = Environment(loader=FileSystemLoader("templates"))
-    template = env.from_string(
-        """
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Instagram Posts {{ year }}</title>
-    <style>
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            padding: 20px;
-        }
-        .post {
-            border: 1px solid #ccc;
-            padding: 15px;
-            border-radius: 5px;
-        }
-        .stats {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 10px;
-            color: #666;
-        }
-        .navigation {
-            padding: 20px;
-            text-align: center;
-        }
-        .navigation a {
-            margin: 0 10px;
-            text-decoration: none;
-            color: #333;
-        }
-        .slider {
-            position: relative;
-            width: 100%;
-            max-width: 300px;
-        }
-        .slides {
-            display: flex;
-            overflow: hidden;
-            width: 100%;
-        }
-        .slides img {
-            min-width: 100%;
-            transition: transform 0.5s ease;
-        }
-        .slider-buttons {
-            position: absolute;
-            top: 50%;
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            transform: translateY(-50%);
-        }
-        .slider-button {
-            background-color: rgba(0, 0, 0, 0.5);
-            color: white;
-            border: none;
-            padding: 10px;
-            cursor: pointer;
-        }
-    </style>
-    <script>
-        function initSliders() {
-            document.querySelectorAll('.slider').forEach(function(slider) {
-                const slides = slider.querySelector('.slides');
-                const images = slides.querySelectorAll('img');
-                let currentIndex = 0;
-
-                function showSlide(index) {
-                    if (index >= images.length) {
-                        currentIndex = 0;
-                    } else if (index < 0) {
-                        currentIndex = images.length - 1;
-                    } else {
-                        currentIndex = index;
-                    }
-                    slides.style.transform = 'translateX(' + (-currentIndex * 100) + '%)';
-                }
-
-                slider.querySelector('.prev').addEventListener('click', function() {
-                    showSlide(currentIndex - 1);
-                });
-
-                slider.querySelector('.next').addEventListener('click', function() {
-                    showSlide(currentIndex + 1);
-                });
-            });
-        }
-
-        document.addEventListener('DOMContentLoaded', initSliders);
-    </script>
-</head>
-<body>
-    <div class="navigation">
-        {% for y in all_years %}
-            <a href="{{ y }}.html" {% if y == year %}style="font-weight: bold;"{% endif %}>{{ y }}</a>
-        {% endfor %}
-    </div>
-    <div class="grid">
-        {% for post in posts %}
-        <div class="post">
-        {% if post.images %}
-            <div class="slider">
-                <div class="slides">
-                    {% for image in post.images %}
-                    <img src="{{ image }}" alt="Image">
-                    {% endfor %}
-                </div>
-                <div class="slider-buttons">
-                    <button class="slider-button prev">❮</button>
-                    <button class="slider-button next">❯</button>
-                </div>
-            </div>
-            {% endif %}
-            <div>{{ post.caption }}</div>
-            
-            <div class="stats">
-                <span>❤️ {{ post.like_count }}</span>
-                <span>💬 {{ post.comments }}</span>
-                <a href="https://instagram.com/p/{{ post.shortcode }}" target="_blank">View</a>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-</body>
-</html>
-    """
-    )
+    # Set up Jinja2 environment
+    template = env.get_template("post_template.html")
 
     # Create output directory if it doesn't exist
     os.makedirs("output", exist_ok=True)

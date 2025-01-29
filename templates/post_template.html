@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Instagram Posts {{ year }}</title>
+    <style>
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .post {
+            border: 1px solid #ccc;
+            padding: 15px;
+            border-radius: 5px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            color: #666;
+        }
+
+        .navigation {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .navigation a {
+            margin: 0 10px;
+            text-decoration: none;
+            color: #333;
+        }
+
+        .image-gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .image-item {
+            width: 400px;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .image-item img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .caption {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="navigation">
+        {% for y in all_years %}
+        <a href="{{ y }}.html" {% if y==year %}style="font-weight: bold;" {% endif %}>{{ y }}</a>
+        {% endfor %}
+    </div>
+    <div class="grid">
+        {% for post in posts %}
+        <div class="post">
+            {% if post.images %}
+            <div class="image-gallery">
+                {% for image in post.images %}
+                <div class="image-item">
+                    <img src="{{ image }}" alt="Image">
+                   
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <div class="caption">{{ post.caption }}</div>
+            <div class="stats">
+                <span>❤️ {{ post.like_count }}</span>
+                <span>💬 {{ post.comments }}</span>
+                <span>📅 {{ post.date }}</span>
+                <a href="https://instagram.com/p/{{ post.shortcode }}" target="_blank">View</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+
+</html>
