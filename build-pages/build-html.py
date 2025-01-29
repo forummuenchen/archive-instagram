@@ -60,8 +60,26 @@ def process_instagram_files(directory):
                         "like_count": data["node"]["edge_media_preview_like"]["count"],
                         "shortcode": data["node"]["shortcode"],
                         "timestamp": timestamp,
+                        "images": [],
                     }
 
+                    # Detect images with the same name as the JSON file
+                    base_filename = filename[:-5]  # Remove the .json extension
+                    image_path = os.path.join(
+                        root,
+                        f"{base_filename}.jpg",
+                    )
+                    if os.path.exists(image_path):
+                        post["images"].append(os.path.abspath(image_path))
+
+                    for i in range(1, 20):  # Assuming not more than 99 images per post
+                        image_name = f"{base_filename}_{i}.jpg"
+                        image_path = os.path.join(root, image_name)
+                        if os.path.exists(image_path):
+                            post["images"].append(os.path.abspath(image_path))
+                        else:
+                            break
+                    
                     posts_by_year[year].append(post)
                 except (KeyError, json.JSONDecodeError) as e:
                     print(f"\nError processing {filename}: {str(e)}")
@@ -76,9 +94,6 @@ def process_instagram_files(directory):
     )
 
     return posts_by_year
-
-
-# The rest of the code remains unchanged
 
 
 def generate_html_pages(posts_by_year):
@@ -119,7 +134,66 @@ def generate_html_pages(posts_by_year):
             text-decoration: none;
             color: #333;
         }
+        .slider {
+            position: relative;
+            width: 100%;
+            max-width: 300px;
+        }
+        .slides {
+            display: flex;
+            overflow: hidden;
+            width: 100%;
+        }
+        .slides img {
+            min-width: 100%;
+            transition: transform 0.5s ease;
+        }
+        .slider-buttons {
+            position: absolute;
+            top: 50%;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            transform: translateY(-50%);
+        }
+        .slider-button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+        }
     </style>
+    <script>
+        function initSliders() {
+            document.querySelectorAll('.slider').forEach(function(slider) {
+                const slides = slider.querySelector('.slides');
+                const images = slides.querySelectorAll('img');
+                let currentIndex = 0;
+
+                function showSlide(index) {
+                    if (index >= images.length) {
+                        currentIndex = 0;
+                    } else if (index < 0) {
+                        currentIndex = images.length - 1;
+                    } else {
+                        currentIndex = index;
+                    }
+                    slides.style.transform = 'translateX(' + (-currentIndex * 100) + '%)';
+                }
+
+                slider.querySelector('.prev').addEventListener('click', function() {
+                    showSlide(currentIndex - 1);
+                });
+
+                slider.querySelector('.next').addEventListener('click', function() {
+                    showSlide(currentIndex + 1);
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', initSliders);
+    </script>
 </head>
 <body>
     <div class="navigation">
@@ -130,7 +204,21 @@ def generate_html_pages(posts_by_year):
     <div class="grid">
         {% for post in posts %}
         <div class="post">
-            <div>{{ post.caption[:200] }}{% if post.caption|length > 200 %}...{% endif %}</div>
+        {% if post.images %}
+            <div class="slider">
+                <div class="slides">
+                    {% for image in post.images %}
+                    <img src="{{ image }}" alt="Image">
+                    {% endfor %}
+                </div>
+                <div class="slider-buttons">
+                    <button class="slider-button prev">❮</button>
+                    <button class="slider-button next">❯</button>
+                </div>
+            </div>
+            {% endif %}
+            <div>{{ post.caption }}</div>
+            
             <div class="stats">
                 <span>❤️ {{ post.like_count }}</span>
                 <span>💬 {{ post.comments }}</span>
