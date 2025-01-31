@@ -241,7 +241,7 @@ def copy_static_files(static_dir, main_output_dir):
 
     # Copy all the CSS files
     for css_file in glob.glob(os.path.join(static_dir, '*.css')):
-        shutil.copy(css_file, output_static_dir)
+        shutil.copy(css_file, main_output_dir)
         print(f"Copied {css_file} to {output_static_dir}")
 
 
@@ -274,7 +274,7 @@ def main():
         generate_account_page(account, profile_data, all_years, base_output_dir)
 
         # Copy static CSS files to the output directory
-        copy_static_files("static/css", os.path.join(base_output_dir, account))
+        copy_static_files("static/css", os.path.join(base_output_dir))
 
     # Generate index page
     generate_index_page(accounts, base_output_dir)
