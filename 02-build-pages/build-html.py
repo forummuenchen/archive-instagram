@@ -148,7 +148,7 @@ def generate_post_pages(account_name, posts_by_year, base_output_dir):
 
 
     try:
-        template = env.get_template("post_template.html")
+        template = env.get_template("post.html")
     except TemplateNotFound:
         print("Template 'post_template.html' not found in the 'templates' directory.")
         return
@@ -215,7 +215,7 @@ def generate_index_page(accounts, base_output_dir):
     # Set up Jinja2 environment
     env = Environment(loader=FileSystemLoader("templates"))
     try:
-        template = env.get_template("index_template.html")
+        template = env.get_template("index.html")
     except TemplateNotFound:
         print("Template 'index_template.html' not found in the 'templates' directory.")
         return
@@ -256,6 +256,7 @@ def main():
     base_output_dir = "instagram-archiv"
      # List all account directories: all folders within base_directory
     accounts = load_folders(base_directory)
+    accounts = ["lez_lesbischqueereszentrum", "forummuenchenev"]
 
     print("Instagram JSON to HTML Processor")
     print("=" * 30)

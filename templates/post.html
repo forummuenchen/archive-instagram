@@ -18,6 +18,9 @@
         <a href="{{ this_year }}.html" {% if this_year==year %}style="font-weight: bold;" {% endif %}>{{ this_year }}</a>
         {% endfor %}
     </nav>
+    <nav aria-label="Breadcrumb" class="breadcrumb">
+        {% block breadcrumb %}{% endblock %}
+      </nav>
     <div class="grid">
         {% for post in posts %}
         <div class="post">

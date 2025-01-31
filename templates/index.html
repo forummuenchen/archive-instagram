@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Instagram Accounts</title>
+
+    <link rel="stylesheet" type="text/css" href="static/css/styles.css">
+
+</head>
+
+<body>
+    <div class="header">
+        <h1>Instagram Accounts</h1>
+    </div>
+    <div class="account-list">
+        <ul>
+            {% for account in accounts %}
+            <li><a href="{{ account }}/index.html">{{ account }}</a></li>
+            {% endfor %}
+        </ul>
+    </div>
+</body>
+
+</html>
