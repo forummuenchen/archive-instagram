@@ -236,12 +236,12 @@ def copy_static_files(static_dir, account_output_dir):
 def main():
     # Base directory containing account directories
     base_directory = "data"
-    base_output_dir = "output"
+    base_output_dir = "instagram-archiv"
      # List all account directories: all folders within base_directory
     accounts = [
         "forummuenchenev",
-        "lez_lesbischqueereszentrum",
-        "sub_szene_muc"
+        "lez_lesbischqueereszentrum"#,
+        #"sub_szene_muc"
     ] 
 
     print("Instagram JSON to HTML Processor")
@@ -264,7 +264,7 @@ def main():
 
     print("\nProcess complete!")
     print(f"Generated index and HTML pages for accounts: {', '.join(accounts)}")
-    print("Files are in the 'output' directory")
+    print(f"Files are in the {base_output_dir} directory")
 
 
 if __name__ == "__main__":

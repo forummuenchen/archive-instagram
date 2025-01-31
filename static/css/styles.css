@@ -2,7 +2,7 @@ body {
     margin: 10px 10% 10px 10%;
     font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;
     line-height: 1.5;
-    font-size: 1.4em;
+    font-size: 1em;
   }
       .grid {
           display: grid;
@@ -21,7 +21,7 @@ body {
           display: flex;
           justify-content: space-between;
           margin-top: 10px;
-          color: #666;
+
       }
 
       .navigation {
@@ -55,6 +55,6 @@ body {
 
       .caption {
           margin-top: 10px;
-          font-size: 14px;
-          color: #333;
+        
+
       }
