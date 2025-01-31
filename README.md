@@ -4,8 +4,6 @@ This repository contains scripts to collect Instagram profiles and posts and the
 
 The goal is medium and long term archiving. 
 
-It follows the concepts: 
-
 
 ## Step 1: Download Instagram posts and profiles
 
