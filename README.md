@@ -26,6 +26,10 @@ instaloader --stories --highlights --tagged --reels --comments --no-compress-jso
 
 After getting the data, it is used to build static HTML websites. 
 
+```bash
+ uv run 02-build-pages/build-html.py
+```
+
 ## Links
 
 [Using static websites for tiny archives](https://alexwlchan.net/2024/static-websites/)
