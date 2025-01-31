@@ -1,0 +1,14 @@
+[project]
+name = "archive-instagram"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "datetime>=5.5",
+    "instaloader>=4.14.1",
+    "ipykernel>=6.29.5",
+    "jinja2>=3.1.5",
+    "logging>=0.4.9.6",
+    "pandas>=2.2.3",
+]
