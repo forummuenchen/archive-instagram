@@ -4,42 +4,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ profile.username }} - Instagram-Archiv</title>
+    <title>{{ account_name }} - Instagram-Archiv</title>
+    <link rel="stylesheet" type="text/css" href="static/css/styles.css">
 </head>
 
 <body>
     <header>
-        <img src="{{ profile.profile_img }}" alt="(@{{ profile.username }})s profile picture"
+
+        <img src="../../{{ profile.profile_img }}" alt="@{{ account_name }}s profile picture"
             style="height: 100px; width: 100px;">
-        <h1>{{ profile.full_name }} (@{{ profile.username }})</h1>
-        <p>{{ profile.biography }}</p>
-        <p>Ganzer Name: {{ profile.full_name}}</p>
-        <p>link: <a href="{{ profile.bio_links}}">{{ profile.bio_links}}</a></p>
-        <p>Kategorie: c</p>
-        <p>Telefon: {{ profile.contact_phone_number}}</p>
-        <p>Straße: {{ profile.address_json}}</p>
-        <p>Mail: {{ profile.public_email}}</p>
+        <h1>{{ profile.full_name }} (@{{ account_name }})</h1>
+
     </header>
 
-    <nav>
-        <ul>
-            {% for year in years %}
-            <li><a href="{{ year }}.html">{{ year }}</a></li>
-            {% endfor %}
-        </ul>
-    </nav>
+
 
     <section>
-        <h2>Posts</h2>
-        <ul>
-            {% for post in posts %}
-            <li>
-                <img src="{{ post.image_path }}" alt="Post image">
-                <p>{{ post.caption }}</p>
-                <p>{{ post.formatted_date }}</p>
-            </li>
+
+<h2>Informationen zum Profil</h2>
+<p>Bio: {{ profile.biography }}</p>
+<p>Ganzer Name: {{ profile.full_name}}</p>
+<p>link: <a href="{{ profile.bio_links}}">{{ profile.bio_links}}</a></p>
+<p>Kategorie: c</p>
+<p>Telefon: {{ profile.contact_phone_number}}</p>
+<p>Straße: {{ profile.address_json}}</p>
+<p>Mail: {{ profile.public_email}}</p>
+
+        <h2>Posts nach Jahren</h2>
+        <nav>
+            <ul>
+                {% for year in years %}
+                
+                {% endfor %}
+            </ul>
+        </nav>
+
+        <nav class="navigation_account">
+            {% for this_year in all_years %}
+            <li><a href="{{ this_year }}.html">{{ this_year }}</a></li>
             {% endfor %}
-        </ul>
+        </nav>
     </section>
 </body>
 

@@ -94,7 +94,7 @@ def process_instagram_files(directory):
                         "images": [],
                         "accessibility_caption": accessibility_caption
                     }
-
+        
                     # Detect images with the same name as the JSON file
                     base_filename = filename[:-5]  # Remove the .json extension
                     for ext in ["jpg", "webp", "png"]:
@@ -103,7 +103,8 @@ def process_instagram_files(directory):
                             f"{base_filename}.{ext}",
                         )
                         if os.path.exists(image_path):
-                            post["images"].append(os.path.abspath(image_path))
+                            #post["images"].append(os.path.abspath(image_path))
+                            post["images"].append(image_path)
 
                         for i in range(
                             1, 20
@@ -111,7 +112,8 @@ def process_instagram_files(directory):
                             image_name = f"{base_filename}_{i}.{ext}"
                             image_path = os.path.join(root, image_name)
                             if os.path.exists(image_path):
-                                post["images"].append(os.path.abspath(image_path))
+                                #post["images"].append(os.path.abspath(image_path))
+                                post["images"].append(image_path)
                             else:
                                 break
 
@@ -127,7 +129,6 @@ def process_instagram_files(directory):
     print(
         f"Total posts processed: {sum(len(posts) for posts in posts_by_year.values())}"
     )
-
     return posts_by_year
 
 
@@ -189,7 +190,8 @@ def generate_account_page(account_name, profile, all_years, base_output_dir):
     # Generate HTML
     html_content = template.render(
         profile=profile,
-        years=all_years,
+        all_years=all_years,
+        account_name=account_name
     )
 
     # Write to file
