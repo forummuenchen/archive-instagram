@@ -125,11 +125,12 @@ def process_instagram_files(directory):
     return posts_by_year
 
 
-def generate_html_pages(account_name, posts_by_year, base_output_dir):
+def generate_post_pages(account_name, posts_by_year, base_output_dir):
     print("\nGenerating HTML pages...")
 
     # Set up Jinja2 environment
     env = Environment(loader=FileSystemLoader("templates"))
+
     try:
         template = env.get_template("post_template.html")
     except TemplateNotFound:
@@ -231,7 +232,7 @@ def main():
         print(f"Processing account: {account}")
         profile_data = load_profile(account_directory)
         posts_by_year = process_instagram_files(account_directory)
-        generate_html_pages(account, posts_by_year, base_output_dir)
+        generate_post_pages(account, posts_by_year, base_output_dir)
         all_years = sorted(posts_by_year.keys())
         generate_account_page(account, profile_data, all_years, base_output_dir)
 
