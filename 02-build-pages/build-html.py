@@ -230,17 +230,18 @@ def generate_index_page(accounts, base_output_dir):
     print(f"Saved {output_path}")
 
 
-def copy_static_files(static_dir, account_output_dir):
+def copy_static_files_once(static_dir, main_output_dir):
     print("\nCopying static files...")
 
-    # Create the static directory in the output if it doesn't exist
-    output_static_dir = os.path.join(account_output_dir, 'static', 'css')
+    # Create the static directory in the main output directory if it doesn't exist
+    output_static_dir = os.path.join(main_output_dir, 'static', 'css')
     os.makedirs(output_static_dir, exist_ok=True)
 
     # Copy all the CSS files
     for css_file in glob.glob(os.path.join(static_dir, '*.css')):
         shutil.copy(css_file, output_static_dir)
         print(f"Copied {css_file} to {output_static_dir}")
+
 
 def load_folders(base_directory):
     folders = []
