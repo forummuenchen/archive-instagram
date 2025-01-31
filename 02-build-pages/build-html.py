@@ -230,7 +230,7 @@ def generate_index_page(accounts, base_output_dir):
     print(f"Saved {output_path}")
 
 
-def copy_static_files_once(static_dir, main_output_dir):
+def copy_static_files(static_dir, main_output_dir):
     print("\nCopying static files...")
 
     # Create the static directory in the main output directory if it doesn't exist
