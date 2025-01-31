@@ -6,7 +6,6 @@ from datetime import datetime
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 from collections import defaultdict
 
-
 def load_profile(data_dir):
     # Look for profile JSON file with the pattern account_name_numeric_ids.json
     profile_files = glob.glob(os.path.join(data_dir, "*.json"))
@@ -14,26 +13,38 @@ def load_profile(data_dir):
         profile_path = profile_files[0]
         with open(profile_path, "r") as file:
             data = json.load(file)
-            profile_data = {
-                "biography": data["node"]["biography"],
-                "bio_links": data["node"]["external_url"],
-                "category_name": data["node"]["category_name"],
-                "id": data["node"]["id"],
-                "contact_phone_number": data["node"]["iphone_struct"]["contact_phone_number"],
-                "full_name": data["node"]["full_name"],
-                "public_email": data["node"]["iphone_struct"]["public_email"],
-                "address_json": data["node"]["business_address_json"],
-                "city": data["node"]["iphone_struct"]["city_name"]
-            }
-            
+        
+        node = data.get("node", {})
+        iphone_struct = node.get("iphone_struct", {})
+
+        profile_data = {
+            "biography": node.get("biography", ""),
+            "bio_links": node.get("external_url", ""),
+            "category_name": node.get("category_name", ""),
+            "id": node.get("id", ""),
+            "full_name": node.get("full_name", ""),
+            "public_email": iphone_struct.get("public_email", ""),
+            "address_json": node.get("business_address_json", ""),
+            "city": iphone_struct.get("city_name", ""),
+            "contact_phone_number": node.get("contact_phone_number", "")
+        }
+
+        # Look for profile picture files
         profile_pic_files = glob.glob(os.path.join(data_dir, "*profile_pic*"))
-        profile_data["profile_img"] = profile_pic_files[0]
+        if profile_pic_files:
+            profile_data["profile_img"] = profile_pic_files[0]
+        else:
+            profile_data["profile_img"] = ""
 
         return profile_data
     else:
         print(f"Warning: Profile JSON file not found in {data_dir}")
         return {}
 
+import os
+import json
+from datetime import datetime
+from collections import defaultdict
 
 def process_instagram_files(directory):
     print(f"\nScanning directory: {directory}")
@@ -73,22 +84,28 @@ def process_instagram_files(directory):
             with open(os.path.join(root, filename), "r", encoding="utf-8") as file:
                 try:
                     data = json.load(file)
-                    # Extract timestamp and convert to year
-                    timestamp = data["node"]["date"]
+                    
+                    node = data.get("node", {})
+                    timestamp = node.get("date", None)
+                    if timestamp is None:
+                        raise KeyError("date")
+
                     date_obj = datetime.fromtimestamp(timestamp)
                     date = date_obj.strftime("%d.%m.%Y")
-                    year = datetime.fromtimestamp(timestamp).year
-                    if data["node"]["accessibility_caption"]:
-                        accessibility_caption = data["node"]["accessibility_caption"]
-                    else:
-                        accessibility_caption = ""
-                  
+                    year = date_obj.year
+
+                    caption = node.get("caption", "")
+                    comments = node.get("comments", "")
+                    like_count = node.get("edge_media_preview_like", {}).get("count", 0)
+                    shortcode = node.get("shortcode", "")
+                    accessibility_caption = node.get("accessibility_caption", "")
+
                     # Extract required fields
                     post = {
-                        "caption": data["node"]["caption"],
-                        "comments": data["node"]["comments"],
-                        "like_count": data["node"]["edge_media_preview_like"]["count"],
-                        "shortcode": data["node"]["shortcode"],
+                        "caption": caption,
+                        "comments": comments,
+                        "like_count": like_count,
+                        "shortcode": shortcode,
                         "date": date,
                         "timestamp": timestamp,
                         "images": [],
@@ -98,21 +115,14 @@ def process_instagram_files(directory):
                     # Detect images with the same name as the JSON file
                     base_filename = filename[:-5]  # Remove the .json extension
                     for ext in ["jpg", "webp", "png"]:
-                        image_path = os.path.join(
-                            root,
-                            f"{base_filename}.{ext}",
-                        )
+                        image_path = os.path.join(root, f"{base_filename}.{ext}")
                         if os.path.exists(image_path):
-                            #post["images"].append(os.path.abspath(image_path))
                             post["images"].append(image_path)
 
-                        for i in range(
-                            1, 20
-                        ):  # Assuming not more than 99 images per post
+                        for i in range(1, 20):  # Assuming not more than 99 images per post
                             image_name = f"{base_filename}_{i}.{ext}"
                             image_path = os.path.join(root, image_name)
                             if os.path.exists(image_path):
-                                #post["images"].append(os.path.abspath(image_path))
                                 post["images"].append(image_path)
                             else:
                                 break
@@ -126,11 +136,9 @@ def process_instagram_files(directory):
     print(f"Files processed: {processed_files}")
     print(f"Files skipped: {skipped_files}")
     print(f"Years found: {sorted(posts_by_year.keys())}")
-    print(
-        f"Total posts processed: {sum(len(posts) for posts in posts_by_year.values())}"
-    )
-    return posts_by_year
+    print(f"Total posts processed: {sum(len(posts) for posts in posts_by_year.values())}")
 
+    return posts_by_year
 
 def generate_post_pages(account_name, posts_by_year, base_output_dir):
     print("\nGenerating HTML pages...")
@@ -234,17 +242,20 @@ def copy_static_files(static_dir, account_output_dir):
         shutil.copy(css_file, output_static_dir)
         print(f"Copied {css_file} to {output_static_dir}")
 
+def load_folders(base_directory):
+    folders = []
+    with os.scandir(base_directory) as entries:
+        for entry in entries:
+            if entry.is_dir():
+                folders.append(entry.name)
+    return folders
 
 def main():
     # Base directory containing account directories
     base_directory = "data"
     base_output_dir = "instagram-archiv"
      # List all account directories: all folders within base_directory
-    accounts = [
-        "forummuenchenev",
-        "lez_lesbischqueereszentrum"#,
-        #"sub_szene_muc"
-    ] 
+    accounts = load_folders(base_directory)
 
     print("Instagram JSON to HTML Processor")
     print("=" * 30)
