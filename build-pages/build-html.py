@@ -1,6 +1,7 @@
 import json
 import os
 import glob
+import shutil
 from datetime import datetime
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 from collections import defaultdict
@@ -19,7 +20,7 @@ def load_profile(data_dir):
                 "category_name": data["node"]["category_name"],
                 "id": data["node"]["id"],
                 "contact_phone_number": data["node"]["iphone_struct"]["contact_phone_number"],
-                "full_name":data["node"]["full_name"],
+                "full_name": data["node"]["full_name"],
                 "public_email": data["node"]["iphone_struct"]["public_email"],
                 "address_json": data["node"]["business_address_json"],
                 "city": data["node"]["iphone_struct"]["city_name"]
@@ -77,7 +78,11 @@ def process_instagram_files(directory):
                     date_obj = datetime.fromtimestamp(timestamp)
                     date = date_obj.strftime("%d.%m.%Y")
                     year = datetime.fromtimestamp(timestamp).year
-                    print(date)
+                    if data["node"]["accessibility_caption"]:
+                        accessibility_caption = data["node"]["accessibility_caption"]
+                    else:
+                        accessibility_caption = ""
+                  
                     # Extract required fields
                     post = {
                         "caption": data["node"]["caption"],
@@ -87,6 +92,7 @@ def process_instagram_files(directory):
                         "date": date,
                         "timestamp": timestamp,
                         "images": [],
+                        "accessibility_caption": accessibility_caption
                     }
 
                     # Detect images with the same name as the JSON file
@@ -130,6 +136,7 @@ def generate_post_pages(account_name, posts_by_year, base_output_dir):
 
     # Set up Jinja2 environment
     env = Environment(loader=FileSystemLoader("templates"))
+
 
     try:
         template = env.get_template("post_template.html")
@@ -213,6 +220,19 @@ def generate_index_page(accounts, base_output_dir):
     print(f"Saved {output_path}")
 
 
+def copy_static_files(static_dir, account_output_dir):
+    print("\nCopying static files...")
+
+    # Create the static directory in the output if it doesn't exist
+    output_static_dir = os.path.join(account_output_dir, 'static', 'css')
+    os.makedirs(output_static_dir, exist_ok=True)
+
+    # Copy all the CSS files
+    for css_file in glob.glob(os.path.join(static_dir, '*.css')):
+        shutil.copy(css_file, output_static_dir)
+        print(f"Copied {css_file} to {output_static_dir}")
+
+
 def main():
     # Base directory containing account directories
     base_directory = "data"
@@ -235,6 +255,9 @@ def main():
         generate_post_pages(account, posts_by_year, base_output_dir)
         all_years = sorted(posts_by_year.keys())
         generate_account_page(account, profile_data, all_years, base_output_dir)
+
+        # Copy static CSS files to the output directory
+        copy_static_files("static/css", os.path.join(base_output_dir, account))
 
     # Generate index page
     generate_index_page(accounts, base_output_dir)
