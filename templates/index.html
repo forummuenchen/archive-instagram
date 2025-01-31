@@ -1,24 +1,15 @@
-<!DOCTYPE html>
-<html>
+{% extends "base.html" %}
 
-<head>
-    <title>Instagram Accounts</title>
+{% block title %}Instagram Archiv{% endblock %}
 
-    <link rel="stylesheet" type="text/css" href="static/css/styles.css">
+{% block header %}Instagram Archiv{% endblock %}
 
-</head>
-
-<body>
-    <div class="header">
-        <h1>Instagram Accounts</h1>
-    </div>
-    <div class="account-list">
-        <ul>
-            {% for account in accounts %}
-            <li><a href="{{ account }}/index.html">{{ account }}</a></li>
-            {% endfor %}
-        </ul>
-    </div>
-</body>
-
-</html>
+{% block content %}
+<div class="account-list">
+    <ul>
+        {% for account in accounts %}
+        <li><a href="{{ account }}/index.html">{{ account }}</a></li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

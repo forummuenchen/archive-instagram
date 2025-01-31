@@ -29,6 +29,10 @@ body {
           text-align: center;
       }
 
+      .navigation_account {
+        padding-left: 20px;
+    }
+
       .navigation a {
           margin: 0 10px;
           text-decoration: none;
