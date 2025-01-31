@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ profile.username }} - Instagram-Archiv</title>
+</head>
+
+<body>
+    <header>
+        <img src="{{ profile.profile_img }}" alt="(@{{ profile.username }})s profile picture"
+            style="height: 100px; width: 100px;">
+        <h1>{{ profile.full_name }} (@{{ profile.username }})</h1>
+        <p>{{ profile.biography }}</p>
+        <p>Ganzer Name: {{ profile.full_name}}</p>
+        <p>link: <a href="{{ profile.bio_links}}">{{ profile.bio_links}}</a></p>
+        <p>Kategorie: c</p>
+        <p>Telefon: {{ profile.contact_phone_number}}</p>
+        <p>Straße: {{ profile.address_json}}</p>
+        <p>Mail: {{ profile.public_email}}</p>
+    </header>
+
+    <nav>
+        <ul>
+            {% for year in years %}
+            <li><a href="{{ year }}.html">{{ year }}</a></li>
+            {% endfor %}
+        </ul>
+    </nav>
+
+    <section>
+        <h2>Posts</h2>
+        <ul>
+            {% for post in posts %}
+            <li>
+                <img src="{{ post.image_path }}" alt="Post image">
+                <p>{{ post.caption }}</p>
+                <p>{{ post.formatted_date }}</p>
+            </li>
+            {% endfor %}
+        </ul>
+    </section>
+</body>
+
+</html>
