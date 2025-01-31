@@ -18,10 +18,12 @@
 {% block content %}
 <section>
     <h2>Informationen zum Profil</h2>
+    
     <p>Bio: {{ profile.biography }}</p>
-    <p>Ganzer Name: {{ profile.full_name }}</p>
     <p>link: <a href="{{ profile.bio_links }}">{{ profile.bio_links }}</a></p>
-    <p>Kategorie: c</p>
+    <p>Follower: {{ profile.follow}}</p>
+    <p>Gefolgt: {{ profile.followed_by }}</p>
+    <p>Kategorie:</p>
     <p>Telefon: {{ profile.contact_phone_number }}</p>
     <p>Straße: {{ profile.address_json }}</p>
     <p>Mail: {{ profile.public_email }}</p>

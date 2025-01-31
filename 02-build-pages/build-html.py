@@ -26,7 +26,9 @@ def load_profile(data_dir):
             "public_email": iphone_struct.get("public_email", ""),
             "address_json": node.get("business_address_json", ""),
             "city": iphone_struct.get("city_name", ""),
-            "contact_phone_number": node.get("contact_phone_number", "")
+            "contact_phone_number": node.get("contact_phone_number", ""),
+            "follow": node.get("edge_follow", {}).get("count", 0),
+            "followed_by": node.get("edge_followed_by", {}).get("count", 0) 
         }
 
         # Look for profile picture files
@@ -257,7 +259,7 @@ def main():
     base_output_dir = "instagram-archiv"
      # List all account directories: all folders within base_directory
     accounts = load_folders(base_directory)
-    accounts = ["lez_lesbischqueereszentrum", "forummuenchenev"]
+    #accounts = ["lez_lesbischqueereszentrum", "forummuenchenev"]
 
     print("Instagram JSON to HTML Processor")
     print("=" * 30)
