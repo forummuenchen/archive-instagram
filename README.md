@@ -29,13 +29,15 @@ source .venv/bin/activate
 .venv\Scripts\activate
 ```
 
+Not using `uv`? There is also a `requirements.txt`.
+
 
 ## Step 1: Download Instagram posts and profiles
 
 Getting data out of Meta plattforms is not easy. There is no such thing as an API and Meta tries to prevent scraping. But of course, there are people building and maintaining software to download images, videos or texts. On of the most sophisticated tools is [instaloader](https://instaloader.github.io/).
 
 
-### Prepare a Instagram account
+### Prepare an Instagram account
 
 First, you need an Instagram account, either one you are already having or a new one just for scraping purposes. 
 Beware to do some interactions - like an image, write a comment, upload a profile image and some nonesense posts. 
