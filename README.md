@@ -53,6 +53,8 @@ It's copied from the [instaloader's troubleshooting page](https://instaloader.gi
 
 ### Start downloading
 
+Creata `data` directory and start fetching the data ... The folder structure is defined in the command and should not be changed in order to maintain compatibility.
+
 Example command to get data for one Instagram account:
 
 ```bash
