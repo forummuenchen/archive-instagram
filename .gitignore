@@ -169,3 +169,12 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+
+data/
+output
+instagram-archiv
+.Rproj.user
+.DS_Store
+quarto
+misc
