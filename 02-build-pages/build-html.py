@@ -43,11 +43,6 @@ def load_profile(data_dir):
         print(f"Warning: Profile JSON file not found in {data_dir}")
         return {}
 
-import os
-import json
-from datetime import datetime
-from collections import defaultdict
-
 def process_instagram_files(directory):
     print(f"\nScanning directory: {directory}")
     posts_by_year = defaultdict(list)
@@ -259,7 +254,7 @@ def main():
     base_output_dir = "instagram-archiv"
      # List all account directories: all folders within base_directory
     accounts = load_folders(base_directory)
-    #accounts = ["lez_lesbischqueereszentrum", "forummuenchenev"]
+    #accounts = ["munichkyivqueer"]
 
     print("Instagram JSON to HTML Processor")
     print("=" * 30)

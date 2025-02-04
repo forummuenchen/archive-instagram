@@ -60,14 +60,14 @@ Creata `data` directory and start fetching the data ... The folder structure is 
 Example command to get data for one Instagram account:
 
 ```bash
-instaloader forummuenchenev --stories --highlights --tagged --reels --comments --no-compress-json --max-connection-attempts 10 --dirname-pattern=data/{target} --filename-pattern={date_utc:%Y}/{typename}_{shortcode}_{date_utc}_UTC  --sanitize-paths --login INSTA_ACCOUNT
+instaloader forummuenchenev --stories --highlights --tagged --reels --comments --no-compress-json --max-connection-attempts 10 --dirname-pattern=data/{target} --filename-pattern={date_utc:%Y}/{shortcode}_{date_utc}_UTC  --sanitize-paths --login INSTA_ACCOUNT
 ```
 
 
 Example command to get data for multiple Instagram accounts:
 
 ```bash
-instaloader forummuenchenev lez_lesbischqueereszentrum --stories --highlights --tagged --reels --comments --no-compress-json --max-connection-attempts 10 --dirname-pattern=data/{target} --filename-pattern={date_utc:%Y}/{typename}_{shortcode}_{date_utc}_UTC  --sanitize-paths --login INSTA_ACCOUNT
+instaloader forummuenchenev lez_lesbischqueereszentrum --stories --highlights --tagged --reels --comments --no-compress-json --max-connection-attempts 10 --dirname-pattern=data/{target} --filename-pattern={date_utc:%Y}/{shortcode}_{date_utc}_UTC  --sanitize-paths --login INSTA_ACCOUNT
 ```
 
 Example for multiple Instagram accounts, stored in a list `01-get-instagram-posts/accounts.txt`.
