@@ -74,7 +74,7 @@ Example for multiple Instagram accounts, stored in a list `01-get-instagram-post
 This uses instaloaders [`args` parameters](https://instaloader.github.io/cli-options.html#cmdoption-arg-args.txt).
 
 ```bash
-instaloader --stories --highlights --tagged --reels --comments --no-compress-json --max-connection-attempts 10 --dirname-pattern=data/{target} --filename-pattern={date_utc:%Y}/{shortcode}_{date_utc}_UTC  --sanitize-paths --login INSTA_ACCOUNT +01-get-instagram-posts/accounts.txt
+instaloader --stories --highlights --tagged --reels --comments --max-connection-attempts 10 --dirname-pattern=data/{target} --filename-pattern={date_utc:%Y}/{shortcode}_{date_utc}_UTC  --sanitize-paths --login +01-get-instagram-posts/insta_account.txt +01-get-instagram-posts/accounts.txt
 ```
 
 ## Step 2: Build static HTML websites
