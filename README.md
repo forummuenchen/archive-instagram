@@ -29,8 +29,18 @@ source .venv/bin/activate
 .venv\Scripts\activate
 ```
 
-Not using `uv`? There is also a `requirements.txt`.
+Install all required packages according to `pyproject.toml`:
 
+```bash
+uv pip install -r pyproject.toml
+````
+
+Not using `uv` or `pyproject.toml`? There is also a `requirements.txt`.
+
+```bash
+uv pip install -r requirements.txt
+pip install -r requirements.txt
+```
 
 ## Step 1: Download Instagram posts and profiles
 
