@@ -53,8 +53,8 @@ class InstagramProcessor:
 
         return profile_data
 
-    def process_instagram_files(self, directory):
-        logging.info(f"\nScanning directory: {directory}")
+    def process_instagram_posts(self, directory):
+        logging.info(f"Scanning directory: {directory}")
         posts_by_year = defaultdict(list)
 
         files = [f for f in self._find_files(directory)]
@@ -77,9 +77,9 @@ class InstagramProcessor:
 
             posts_by_year[post["year"]].append(post)
             processed_files += 1
-            logging.info(f"\rProcessing file {processed_files}/{total_files} ({(processed_files/total_files)*100:.1f}%)")
+            logging.info(f"Processing file {processed_files}/{total_files} ({(processed_files/total_files)*100:.1f}%)")
 
-        logging.info("\n\nProcessing summary:")
+        logging.info("\n\n\nProcessing summary:")
         logging.info(f"Total files found: {total_files + skipped_files}")
         logging.info(f"Files processed: {processed_files}")
         logging.info(f"Files skipped: {skipped_files}")
@@ -95,7 +95,7 @@ class InstagramProcessor:
         logging.info("\nGenerating HTML pages...")
 
         try:
-            template = self.env.get_template("post.html")
+            template = self.env.get_template("posts_per_year.html")
         except TemplateNotFound:
             logging.error("Template 'post_template.html' not found in the 'templates' directory.")
             return
@@ -260,7 +260,7 @@ def main():
         logging.info(f"Processing account: {account}")
         account_directory = os.path.join(processor.base_directory, account)
         profile_data = processor.load_profile(account_directory)
-        posts_by_year = processor.process_instagram_files(account_directory)
+        posts_by_year = processor.process_instagram_posts(account_directory)
         processor.generate_post_pages(account, posts_by_year)
         all_years = sorted(posts_by_year.keys())
         processor.generate_account_page(account, profile_data, all_years)
