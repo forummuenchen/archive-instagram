@@ -58,7 +58,7 @@ class InstagramProcessor:
         logging.info(f"\nScanning directory: {directory}")
         posts_by_year = defaultdict(list)
 
-        files = [f for f in self._find_files(directory)]
+        files = [f for f in self._find_files(directory, type="post")]
         total_files = len(files)
         processed_files = 0
         skipped_files = 0
@@ -92,44 +92,6 @@ class InstagramProcessor:
         self.account_post_counts[os.path.basename(directory)] = sum(len(posts) for posts in posts_by_year.values())
 
         return posts_by_year
-    
-    def load_comments(self, directory):
-        logging.info(f"\nScanning directory: {directory}")
-        comments = []
-
-        files = [f for f in self._find_comment_files(directory)]
-        total_files = len(files)
-        processed_files = 0
-        skipped_files = 0
-
-        for file_path in files:
-            logging.info(f"Processing file: {file_path}")
-            try:
-                data = self._load_json(file_path)
-            except (KeyError, json.JSONDecodeError, lzma.LZMAError) as e:
-                logging.error(f"Error processing {file_path}: {e}")
-                skipped_files += 1
-                continue
-
-            comment = self._extract_comment_data(file_path, data)
-            if not comment:
-                skipped_files += 1
-                continue
-
-            comments.append(comment)
-            processed_files += 1
-            logging.info(f"\rProcessing file {processed_files}/{total_files} ({(processed_files/total_files)*100:.1f}%)")
-
-        logging.info("\n\nProcessing summary:")
-        logging.info(f"Total files found: {total_files + skipped_files}")
-        logging.info(f"Files processed: {processed_files}")
-        logging.info(f"Files skipped: {skipped_files}")
-        logging.info(f"Total comments processed: {len(comments)}")
-
-        # Save the total number of comments for this account
-        self.account_comment_counts[os.path.basename(directory)] = len(comments)
-
-        return comments
 
     def generate_post_pages(self, account_name, posts_by_year):
         logging.info("\nGenerating HTML pages...")
@@ -233,20 +195,21 @@ class InstagramProcessor:
         profile_pic_files = glob.glob(os.path.join(data_dir, "*profile_pic*"))
         return profile_pic_files[0] if profile_pic_files else ""
 
-    def _find_files(self, directory):
+    def _find_files(self, directory, type):
         for root, _, files in os.walk(directory):
             for f in files:
-                if (f.endswith(".json") or f.endswith(".json.xz")):
-                    if "tagged" in f.lower() or "comments" in f.lower():
-                        logging.debug(f"Skipping file due to filter: {f}")
-                        continue
-                    yield os.path.join(root, f)
-
-    def _find_comment_files(self, directory):
-        for root, _, files in os.walk(directory):
-            for f in files:
-                if f.endswith("-comments.json") or f.endswith("-comments.json.gz"):
-                    yield os.path.join(root, f)
+                if type == "post":
+                    if f.endswith(".json") or f.endswith(".json.xz"):
+                        if "tagged" in f.lower() or "comments" in f.lower():
+                            logging.debug(f"Skipping file due to filter: {f}")
+                            continue
+                        yield os.path.join(root, f)
+                elif type == "comment":
+                    if f.endswith("-comments.json") or f.endswith("-comments.json.gz"):
+                        yield os.path.join(root, f)
+                elif type == "tagged":
+                    if "tagged" in f.lower() and f.endswith(".json"):
+                        yield os.path.join(root, f)
 
     def _extract_post_data(self, file_path, data):
         node = data.get("node", {})
@@ -271,24 +234,6 @@ class InstagramProcessor:
             "accessibility_caption": node.get("accessibility_caption", "")
         }
         return post
-
-    def _extract_comment_data(self, file_path, data):
-        node = data.get("node", {})
-        timestamp = node.get("date", None)
-        if timestamp is None:
-            logging.error(f"Error processing {file_path}: 'date' key not found")
-            return None
-
-        date_obj = datetime.fromtimestamp(timestamp)
-        date = date_obj.strftime("%d.%m.%Y")
-
-        comment = {
-            "text": node.get("text", ""),
-            "like_count": node.get("edge_liked_by", {}).get("count", 0),
-            "timestamp": timestamp,
-            "date": date
-        }
-        return comment
 
     def _find_post_images(self, file_path):
         images = []
@@ -323,6 +268,7 @@ def main():
     logging.info("=" * 30)
 
     accounts = processor.load_folders(processor.base_directory)
+    accounts = ["munichkyivqueer", "forummuenchenev"]
     for account in accounts:
         logging.info(f"Processing account: {account}")
         account_directory = os.path.join(processor.base_directory, account)

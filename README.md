@@ -77,6 +77,10 @@ This uses instaloaders [`args` parameters](https://instaloader.github.io/cli-opt
 instaloader --stories --highlights --tagged --reels --comments --max-connection-attempts 10 --dirname-pattern=data/{target} --filename-pattern={date_utc:%Y}/{shortcode}_{date_utc}_UTC  --sanitize-paths --login +01-get-instagram-posts/insta_account.txt +01-get-instagram-posts/accounts.txt
 ```
 
+```bash
+instaloader --stories --highlights --tagged --reels --comments --max-connection-attempts 10 --dirname-pattern=data/{target} --filename-pattern={date_utc:%Y}/{shortcode}_{date_utc}_UTC  --sanitize-paths --fast-update --login +01-get-instagram-posts/insta_account.txt +01-get-instagram-posts/accounts.txt
+```
+
 ## Step 2: Build static HTML websites
 
 After getting the data, it is used to build static HTML websites. It builds [upon pincusion](https://github.com/Historypin/pincushion).
