@@ -26,9 +26,16 @@
         {% if post.images %}
         <div class="image-gallery">
             {% for image in post.images %}
+            {% if image.endswith('.mp4') %}
+                    <video class="post-video" controls>
+                        <source src="../../{{ image }}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                {% else %}
             <div class="image-item">
                 <img src="../../{{ image }}" alt="{{ post.accessibility_caption }}">
             </div>
+            {% endif %}
             {% endfor %}
         </div>
         {% endif %}

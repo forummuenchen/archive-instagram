@@ -276,9 +276,16 @@ class InstagramProcessor:
         date = date_obj.strftime("%d.%m.%Y")
         year = date_obj.year
 
+        # Extract caption text
+        caption = node.get("caption", None)
+        if not caption and "edge_media_to_caption" in node and "edges" in node["edge_media_to_caption"]:
+            edges = node["edge_media_to_caption"]["edges"]
+            if edges and "node" in edges[0] and "text" in edges[0]["node"]:
+                caption = edges[0]["node"]["text"]
+
         if type == "post":
             post = {
-                "caption": node.get("caption", ""),
+                "caption": caption,
                 "comments": node.get("comments", ""),
                 "like_count": node.get("edge_media_preview_like", {}).get("count", 0),
                 "shortcode": node.get("shortcode", ""),
@@ -311,7 +318,12 @@ class InstagramProcessor:
     def _find_post_images(self, file_path):
         images = []
         base_filename = os.path.splitext(file_path)[0]
-        for ext in ["jpg", "webp", "png"]:
+        if base_filename.endswith(".json"):
+            base_filename = base_filename[:-5]
+        elif base_filename.endswith(".json.xz"):
+            base_filename = base_filename[:-8]
+        
+        for ext in ["jpg", "webp", "png", "mp4"]:
             image_path = f"{base_filename}.{ext}"
             if os.path.exists(image_path):
                 images.append(image_path)

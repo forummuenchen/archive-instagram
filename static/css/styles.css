@@ -1,64 +1,72 @@
 body {
     margin: 10px 10% 10px 10%;
-    font-family: -apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Inter,Helvetica,Arial,sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Inter, Helvetica, Arial, sans-serif;
     line-height: 1.5;
     font-size: 1em;
-  }
-      .grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-          gap: 20px;
- 
-      }
+}
 
-      .post {
-          border: 1px solid #ccc;
-          padding: 15px;
-          border-radius: 5px;
-      }
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 20px;
 
-      .stats {
-          display: flex;
-          justify-content: space-between;
-          margin-top: 10px;
+}
 
-      }
+.post {
+    border: 1px solid #ccc;
+    padding: 15px;
+    border-radius: 5px;
+}
 
-      .navigation {
-          padding: 20px;
-          text-align: center;
-      }
+.stats {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 10px;
 
-      .navigation_account {
-        padding-left: 20px;
-    }
+}
 
-      .navigation a {
-          margin: 0 10px;
-          text-decoration: none;
-          color: #333;
-      }
+.navigation {
+    padding: 20px;
+    text-align: center;
+}
 
-      .image-gallery {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 10px;
-      }
+.navigation_account {
+    padding-left: 20px;
+}
 
-      .image-item {
-          width: 400px;
-          box-sizing: border-box;
-          text-align: center;
-      }
+.navigation a {
+    margin: 0 10px;
+    text-decoration: none;
+    color: #333;
+}
 
-      .image-item img {
-          width: 100%;
-          height: auto;
-          display: block;
-      }
+.image-gallery {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
 
-      .caption {
-          margin-top: 10px;
-        
+.image-item {
+    width: 400px;
+    box-sizing: border-box;
+    text-align: center;
+}
 
-      }
+.image-item img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.caption {
+    margin-top: 10px;
+
+
+}
+
+.post-video {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
