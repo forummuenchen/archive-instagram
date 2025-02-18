@@ -3,19 +3,20 @@
 {% block title %}{{ year }} - {{ account_name }} - Instagram-Archiv{% endblock %}
 
 {% block header %}
-    <h1><a href="index.html">{{ account_name }}</a></h1>
+<h1><a href="index.html">{{ account_name }}</a></h1>
 {% endblock %}
 
 {% block breadcrumb %}
-    <a href="../index.html">Home</a> / 
-    <a href="index.html">{{ account_name }}</a> / 
-    <a href="{{ year }}.html">{{ year }}</a>
+<a href="../index.html">Home</a> /
+<a href="index.html">{{ account_name }}</a> /
+<a href="{{ year }}{% if is_tagged %}_tagged{% endif %}.html">{{ year }}{% if is_tagged %} (Tagged){% endif %}</a>
 {% endblock %}
 
 {% block content %}
 <nav class="navigation">
     {% for this_year in all_years %}
-    <a href="{{ this_year }}.html" {% if this_year == year %}style="font-weight: bold;" {% endif %}>{{ this_year }}</a>
+    <a href="{{ this_year }}{% if is_tagged %}_tagged{% endif %}.html" {% if this_year==year
+        %}style="font-weight: bold;" {% endif %}>{{ this_year }}{% if is_tagged %} (Tagged){% endif %}</a>
     {% endfor %}
 </nav>
 
@@ -38,13 +39,26 @@
             <span>📅 {{ post.date }}</span>
             <a href="https://instagram.com/p/{{ post.shortcode }}" target="_blank">Quelle</a>
         </div>
+        {% if post.tagged_users %}
+        <div class="stats">
+            <span>Geposted von: <a href='https://instagram.com/{{ post.owner }}'>{{ post.owner }}</a></span>
+        </div>
+        <div class="stats">
+            <span>Tagged: 
+                {% for user in post.tagged_users %}
+                <a href="https://instagram.com/{{ user }}" target="_blank">{{ user }}</a>{% if not loop.last %}, {% endif %}
+                {% endfor %}
+            </span>
+        </div>
+        {% endif %}
     </div>
     {% endfor %}
 </div>
 
 <div class="navigation">
     {% for y in all_years %}
-    <a href="{{ y }}.html" {% if y == year %}style="font-weight: bold;" {% endif %}>{{ y }}</a>
+    <a href="{{ y }}{% if is_tagged %}_tagged{% endif %}.html" {% if y==year %}style="font-weight: bold;" {% endif %}>{{
+        y }}{% if is_tagged %} (Tagged){% endif %}</a>
     {% endfor %}
 </div>
 {% endblock %}

@@ -42,5 +42,13 @@
         <li><a href="{{ this_year }}.html">{{ this_year }}</a></li>
         {% endfor %}
     </nav>
+
+    <h2>Tagged Posts</h2>
+    <p>Posts, in denen @{{ account_name }} getagged wurde, nach Jahren.</p>
+    <nav class="navigation_account">
+        {% for tagged_this_year in tagged_all_years %}
+        <li><a href="{{ tagged_this_year }}_tagged.html">{{ tagged_this_year }}</a></li>
+        {% endfor %}
+    </nav>
 </section>
 {% endblock %}
