@@ -4,6 +4,7 @@ import glob
 import shutil
 import lzma
 import logging
+import re
 from datetime import datetime
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 from collections import defaultdict
@@ -58,7 +59,7 @@ class InstagramProcessor:
         logging.info(f"\nScanning directory: {directory} for type: {type}")
         posts_by_year = defaultdict(list)
 
-        files = [f for f in self._find_files(directory, type)]
+        files = self.find_files(directory, type)
         logging.info(f"Total files found: {len(files)}")
         total_files = len(files)
         processed_files = 0
@@ -197,7 +198,7 @@ class InstagramProcessor:
             shutil.copy(css_file, output_static_dir)
             logging.info(f"Copied {css_file} to {output_static_dir}")
 
-    def load_folders(self, base_directory):
+    def load_accounts(self, base_directory):
         folders = []
         with os.scandir(base_directory) as entries:
             for entry in entries:
@@ -217,33 +218,52 @@ class InstagramProcessor:
         profile_pic_files = glob.glob(os.path.join(data_dir, "*profile_pic*"))
         return profile_pic_files[0] if profile_pic_files else ""
 
-    def _find_files(self, directory, type):
-        logging.info(f"Finding files in directory: {directory} for type: {type}")
-        for root, dirs, files in os.walk(directory):
-            if type == "tagged" and ": tagged" in dirs:
-                tagged_dir = os.path.join(root, ": tagged")
+    def get_dirs(self, directory, type):
+        dirs = [d for d in os.listdir(directory) if os.path.isdir(os.path.join(directory, d))]
+        posts_dirs = [d for d in dirs if re.match(r"20[0-9]{2}", d)]
+        tagged_dir = [d for d in dirs if "tagged" in d.lower()]
+        highlight_dirs = [d for d in dirs if d not in posts_dirs and d not in tagged_dir]
+
+        if type == "post":
+            logging.info(f"Yearly post directories: {posts_dirs}")
+            return posts_dirs
+        elif type == "tagged":
+            if tagged_dir:
+                tagged_dir = os.path.join(directory, tagged_dir[0])
                 logging.info(f"Tagged directory found: {tagged_dir}")
-                for tagged_root, _, tagged_files in os.walk(tagged_dir):
-                    for f in tagged_files:
-                        if f.endswith(".json") or f.endswith(".json.xz"):
-                            if "comments" in f.lower():
-                                logging.debug(f"Skipping file due to filter: {f}")
-                                continue
-                            logging.info(f"Yielding tagged file: {os.path.join(tagged_root, f)}")
-                            yield os.path.join(tagged_root, f)
+                return [tagged_dir]
             else:
-                for f in files:
-                    if type == "post":
-                        if f.endswith(".json") or f.endswith(".json.xz"):
-                            if "tagged" in f.lower() or "comments" in f.lower():
-                                logging.debug(f"Skipping file due to filter: {f}")
-                                continue
-                            logging.info(f"Yielding post file: {os.path.join(root, f)}")
-                            yield os.path.join(root, f)
-                    elif type == "comment":
-                        if f.endswith("-comments.json") or f.endswith("-comments.json.gz"):
-                            logging.info(f"Yielding comment file: {os.path.join(root, f)}")
-                            yield os.path.join(root, f)
+                logging.info("Tagged directory not found")
+                return []
+        elif type == "highlight":
+            logging.info(f"Highlight directories: {highlight_dirs}")
+            return highlight_dirs
+        else:
+            logging.error(f"Unknown type: {type}")
+            return []
+
+    def find_files(self, directory, type, get_comments=False):
+        dirs = self.get_dirs(directory, type)
+        logging.info(f"Directories: {dirs}")
+        files = []
+        for dir_path in dirs:
+            full_dir_path = os.path.join(directory, dir_path) if type == "post" else dir_path
+            if os.path.exists(full_dir_path):
+                logging.info(f"Scanning directory: {full_dir_path}")
+                dir_files = self.get_files_in_dir(full_dir_path, get_comments)
+                files.extend(dir_files)
+                logging.info(f"Found {len(dir_files)} files in {full_dir_path}")
+        return files
+
+    def get_files_in_dir(self, dir_path, get_comments=False):
+        files = []
+        for root, _, filenames in os.walk(dir_path):
+            for f in filenames:
+                if f.endswith(".json") or f.endswith(".json.xz"):
+                    if not get_comments and "comments" in f.lower():
+                        continue
+                    files.append(os.path.join(root, f))
+        return files
 
     def _extract_post_data(self, file_path, data, type="post"):
         node = data.get("node", {})
@@ -320,24 +340,21 @@ def main():
     logging.info("Instagram JSON to HTML Processor")
     logging.info("=" * 30)
 
-    accounts = processor.load_folders(processor.base_directory)
-    accounts = ["forummuenchenev", "philipp.gufler"]
-    accounts = ["philipp.gufler"]
+    accounts = processor.load_accounts(processor.base_directory)
+    #accounts = ["forummuenchenev", "philipp.gufler"]
+    #accounts = ["philipp.gufler"]
     for account in accounts:
         logging.info(f"Processing account: {account}")
         account_directory = os.path.join(processor.base_directory, account)
         profile_data = processor.load_profile(account_directory)
-        #posts_by_year = processor.load_posts(account_directory, type="post")
+        posts_by_year = processor.load_posts(account_directory, type="post")
+        
         tagged_posts_by_year = processor.load_posts(account_directory, type="tagged")
-        #processor.generate_post_pages(account, posts_by_year, tagged_posts_by_year)
-        #all_years = sorted(posts_by_year.keys())
+        processor.generate_post_pages(account, posts_by_year, tagged_posts_by_year)
+        all_years = sorted(posts_by_year.keys())
         tagged_all_years = sorted(tagged_posts_by_year.keys())
-        #processor.generate_account_page(account, profile_data, all_years, tagged_all_years)
-        #processor.copy_static_files()
-        print(tagged_all_years)
-
-        # Log everything inside tagged_posts_by_year
-        logging.info(f"Tagged posts by year for account {account}: {tagged_posts_by_year}")
+        processor.generate_account_page(account, profile_data, all_years, tagged_all_years)
+        processor.copy_static_files()
 
     processor.generate_index_page(accounts)
     logging.info("\nProcess complete!")
