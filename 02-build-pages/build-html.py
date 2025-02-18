@@ -54,11 +54,12 @@ class InstagramProcessor:
 
         return profile_data
 
-    def load_posts(self, directory):
-        logging.info(f"\nScanning directory: {directory}")
+    def load_posts(self, directory, type):
+        logging.info(f"\nScanning directory: {directory} for type: {type}")
         posts_by_year = defaultdict(list)
 
-        files = [f for f in self._find_files(directory, type="post")]
+        files = [f for f in self._find_files(directory, type)]
+        logging.info(f"Total files found: {len(files)}")
         total_files = len(files)
         processed_files = 0
         skipped_files = 0
@@ -72,14 +73,16 @@ class InstagramProcessor:
                 skipped_files += 1
                 continue
 
-            post = self._extract_post_data(file_path, data)
+            post = self._extract_post_data(file_path, data, type)
             if not post:
                 skipped_files += 1
                 continue
 
-            posts_by_year[post["year"]].append(post)
-            processed_files += 1
-            logging.info(f"Processing file {processed_files}/{total_files} ({(processed_files/total_files)*100:.1f}%)")
+            # Ensure no duplicate posts
+            if post not in posts_by_year[post["year"]]:
+                posts_by_year[post["year"]].append(post)
+                processed_files += 1
+                logging.info(f"Processing file {processed_files}/{total_files} ({(processed_files/total_files)*100:.1f}%)")
 
         logging.info("\n\n\nProcessing summary:")
         logging.info(f"Total files found: {total_files + skipped_files}")
@@ -93,13 +96,13 @@ class InstagramProcessor:
 
         return posts_by_year
 
-    def generate_post_pages(self, account_name, posts_by_year):
+    def generate_post_pages(self, account_name, posts_by_year, tagged_posts_by_year):
         logging.info("\nGenerating HTML pages...")
 
         try:
-            template = self.env.get_template("posts_per_year.html")
+            template = self.env.get_template("post.html")
         except TemplateNotFound:
-            logging.error("Template 'post_template.html' not found in the 'templates' directory.")
+            logging.error("Template 'post.html' not found in the 'templates' directory.")
             return
 
         account_output_dir = os.path.join(self.base_output_dir, account_name)
@@ -115,19 +118,37 @@ class InstagramProcessor:
                 posts=sorted_posts,
                 all_years=all_years,
                 account_name=account_name,
+                is_tagged=False
             )
 
             output_path = os.path.join(account_output_dir, f"{year}.html")
             self._write_to_file(output_path, html_content)
             logging.info(f"Saved {output_path}")
 
-    def generate_account_page(self, account_name, profile, all_years):
+        tagged_all_years = sorted(tagged_posts_by_year.keys())
+        for year, posts in tagged_posts_by_year.items():
+            sorted_posts = sorted(posts, key=lambda x: x["timestamp"], reverse=True)
+            logging.info(f"Generating tagged page for {year} ({len(posts)} posts)")
+
+            html_content = template.render(
+                year=year,
+                posts=sorted_posts,
+                all_years=tagged_all_years,
+                account_name=account_name,
+                is_tagged=True
+            )
+
+            output_path = os.path.join(account_output_dir, f"{year}_tagged.html")
+            self._write_to_file(output_path, html_content)
+            logging.info(f"Saved {output_path}")
+
+    def generate_account_page(self, account_name, profile, all_years, tagged_all_years):
         logging.info("\nGenerating account page...")
 
         try:
             template = self.env.get_template("account.html")
         except TemplateNotFound:
-            logging.error("Template 'account_template.html' not found in the 'templates' directory.")
+            logging.error("Template 'account.html' not found in the 'templates' directory.")
             return
 
         account_output_dir = os.path.join(self.base_output_dir, account_name)
@@ -136,6 +157,7 @@ class InstagramProcessor:
         html_content = template.render(
             profile=profile,
             all_years=all_years,
+            tagged_all_years=tagged_all_years,
             account_name=account_name
         )
 
@@ -196,43 +218,74 @@ class InstagramProcessor:
         return profile_pic_files[0] if profile_pic_files else ""
 
     def _find_files(self, directory, type):
-        for root, _, files in os.walk(directory):
-            for f in files:
-                if type == "post":
-                    if f.endswith(".json") or f.endswith(".json.xz"):
-                        if "tagged" in f.lower() or "comments" in f.lower():
-                            logging.debug(f"Skipping file due to filter: {f}")
-                            continue
-                        yield os.path.join(root, f)
-                elif type == "comment":
-                    if f.endswith("-comments.json") or f.endswith("-comments.json.gz"):
-                        yield os.path.join(root, f)
-                elif type == "tagged":
-                    if "tagged" in f.lower() and f.endswith(".json"):
-                        yield os.path.join(root, f)
+        logging.info(f"Finding files in directory: {directory} for type: {type}")
+        for root, dirs, files in os.walk(directory):
+            if type == "tagged" and ": tagged" in dirs:
+                tagged_dir = os.path.join(root, ": tagged")
+                logging.info(f"Tagged directory found: {tagged_dir}")
+                for tagged_root, _, tagged_files in os.walk(tagged_dir):
+                    for f in tagged_files:
+                        if f.endswith(".json") or f.endswith(".json.xz"):
+                            if "comments" in f.lower():
+                                logging.debug(f"Skipping file due to filter: {f}")
+                                continue
+                            logging.info(f"Yielding tagged file: {os.path.join(tagged_root, f)}")
+                            yield os.path.join(tagged_root, f)
+            else:
+                for f in files:
+                    if type == "post":
+                        if f.endswith(".json") or f.endswith(".json.xz"):
+                            if "tagged" in f.lower() or "comments" in f.lower():
+                                logging.debug(f"Skipping file due to filter: {f}")
+                                continue
+                            logging.info(f"Yielding post file: {os.path.join(root, f)}")
+                            yield os.path.join(root, f)
+                    elif type == "comment":
+                        if f.endswith("-comments.json") or f.endswith("-comments.json.gz"):
+                            logging.info(f"Yielding comment file: {os.path.join(root, f)}")
+                            yield os.path.join(root, f)
 
-    def _extract_post_data(self, file_path, data):
+    def _extract_post_data(self, file_path, data, type="post"):
         node = data.get("node", {})
-        timestamp = node.get("date", None)
+        timestamp = node.get("date", None) or node.get("taken_at_timestamp", None)
         if timestamp is None:
-            logging.error(f"Error processing {file_path}: 'date' key not found")
+            logging.error(f"Error processing {file_path}: 'date' or 'taken_at_timestamp' key not found")
             return None
 
         date_obj = datetime.fromtimestamp(timestamp)
         date = date_obj.strftime("%d.%m.%Y")
         year = date_obj.year
 
-        post = {
-            "caption": node.get("caption", ""),
-            "comments": node.get("comments", ""),
-            "like_count": node.get("edge_media_preview_like", {}).get("count", 0),
-            "shortcode": node.get("shortcode", ""),
-            "date": date,
-            "timestamp": timestamp,
-            "year": year,
-            "images": self._find_post_images(file_path),
-            "accessibility_caption": node.get("accessibility_caption", "")
-        }
+        if type == "post":
+            post = {
+                "caption": node.get("caption", ""),
+                "comments": node.get("comments", ""),
+                "like_count": node.get("edge_media_preview_like", {}).get("count", 0),
+                "shortcode": node.get("shortcode", ""),
+                "date": date,
+                "timestamp": timestamp,
+                "year": year,
+                "images": self._find_post_images(file_path),
+                "accessibility_caption": node.get("accessibility_caption", "")
+            }
+        elif type == "tagged":
+            tagged_users = [tagged_user["node"]["user"]["username"] for tagged_user in node.get("edge_media_to_tagged_user", {}).get("edges", [])]
+            owner = node.get("owner", {}).get("username", "")
+            post = {
+                "caption": node.get("caption", ""),
+                "shortcode": node.get("shortcode", ""),
+                "date": date,
+                "timestamp": timestamp,
+                "year": year,
+                "images": self._find_post_images(file_path),
+                "accessibility_caption": node.get("accessibility_caption", ""),
+                "tagged_users": tagged_users,
+                "owner": owner
+            }
+        else:
+            logging.error(f"Unknown post type: {type}")
+            return None
+
         return post
 
     def _find_post_images(self, file_path):
@@ -268,16 +321,23 @@ def main():
     logging.info("=" * 30)
 
     accounts = processor.load_folders(processor.base_directory)
-    accounts = ["munichkyivqueer", "forummuenchenev"]
+    accounts = ["forummuenchenev", "philipp.gufler"]
+    accounts = ["philipp.gufler"]
     for account in accounts:
         logging.info(f"Processing account: {account}")
         account_directory = os.path.join(processor.base_directory, account)
         profile_data = processor.load_profile(account_directory)
-        posts_by_year = processor.load_posts(account_directory)
-        processor.generate_post_pages(account, posts_by_year)
-        all_years = sorted(posts_by_year.keys())
-        processor.generate_account_page(account, profile_data, all_years)
-        processor.copy_static_files()
+        #posts_by_year = processor.load_posts(account_directory, type="post")
+        tagged_posts_by_year = processor.load_posts(account_directory, type="tagged")
+        #processor.generate_post_pages(account, posts_by_year, tagged_posts_by_year)
+        #all_years = sorted(posts_by_year.keys())
+        tagged_all_years = sorted(tagged_posts_by_year.keys())
+        #processor.generate_account_page(account, profile_data, all_years, tagged_all_years)
+        #processor.copy_static_files()
+        print(tagged_all_years)
+
+        # Log everything inside tagged_posts_by_year
+        logging.info(f"Tagged posts by year for account {account}: {tagged_posts_by_year}")
 
     processor.generate_index_page(accounts)
     logging.info("\nProcess complete!")
