@@ -21,7 +21,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
 
 # Create a virtual environment
-uv venv
+uv .venv
 # Activate the virtual environment
 # On Linux/macOS:
 source .venv/bin/activate
