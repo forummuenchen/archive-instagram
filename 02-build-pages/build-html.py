@@ -93,7 +93,8 @@ class InstagramProcessor:
         logging.info(f"Total posts processed: {sum(len(posts) for posts in posts_by_year.values())}")
 
         # Save the total number of posts for this account
-        self.account_post_counts[os.path.basename(directory)] = sum(len(posts) for posts in posts_by_year.values())
+        if type == "post":
+            self.account_post_counts[os.path.basename(directory)] = sum(len(posts) for posts in posts_by_year.values())
 
         return posts_by_year
 

@@ -11,24 +11,24 @@
 
 {% block header %}
 <h1>{{ profile.full_name }}</h1>
-<h2> @{{ account_name }}</h2>
+<h2><a href = "https://instagram.com/{{ account_name }}", target = "_blank">@{{ account_name }}</a></h2>
 <img src="../../{{ profile.profile_img }}" alt="@{{ account_name }}s profile picture" style="height: 100px; width: 100px;">
 {% endblock %}
 
 {% block content %}
 <section>
     <h2>Informationen zum Profil</h2>
-    
     <p>Bio: {{ profile.biography }}</p>
-    <p>link: <a href="{{ profile.bio_links }}">{{ profile.bio_links }}</a></p>
+    <p>Link: <a href="{{ profile.bio_links }}">{{ profile.bio_links }}</a></p>
     <p>Follower: {{ profile.follow}}</p>
     <p>Gefolgt: {{ profile.followed_by }}</p>
-    <p>Kategorie:</p>
+    <!-- <p>Kategorie:</p>
     <p>Telefon: {{ profile.contact_phone_number }}</p>
     <p>Straße: {{ profile.address_json }}</p>
-    <p>Mail: {{ profile.public_email }}</p>
+    <p>Mail: {{ profile.public_email }}</p> -->
 
     <h2>Posts nach Jahren</h2>
+    <p>Posts, die @{{ account_name }} selbst gepostet hat.</p>
     <nav>
         <ul>
             {% for year in years %}

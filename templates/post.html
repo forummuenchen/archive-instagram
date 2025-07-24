@@ -22,7 +22,7 @@
 
 <div class="grid">
     {% for post in posts %}
-    <div class="post">
+    <div class="post" id="{{ post.shortcode }}">
         {% if post.images %}
         <div class="image-gallery">
             {% for image in post.images %}
@@ -58,6 +58,9 @@
             </span>
         </div>
         {% endif %}
+        <div class="stats">
+            <a href="#{{ post.shortcode }}">Link to this post</a>
+        </div>
     </div>
     {% endfor %}
 </div>
