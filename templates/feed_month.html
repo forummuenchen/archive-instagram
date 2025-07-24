@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Feed – {{ month }}/{{ year }}{% endblock %}
+
+{% block breadcrumb %}
+<a href="../../index.html">Home</a>
+{% endblock %} 
+
+{% block header %}
+<h1>Feed for {{ month }}/{{ year }}</h1>
+{% endblock %}
+
+{% block content %}
+<!-- Dropdown Übersicht -->
+<label for="month-feed-select">Choose feed per month:</label>
+<select id="month-feed-select" onchange="window.location.href=this.value;">
+  <option value="">Choose month/year ...</option>
+  {% for key in all_months %}
+    {% set y, m = key.split('/') %}
+    <option value="../../feed/{{ y }}/{{ m }}.html" {% if key == year ~ '/' ~ month %}selected{% endif %}>{{ m }}/{{ y }}</option>
+  {% endfor %}
+</select>
+
+<!-- Navigation -->
+<div class="navigation">
+  {% if prev_key %}
+    {% set prev_year, prev_month = prev_key.split('/') %}
+    <a href="../../feed/{{ prev_year }}/{{ prev_month }}.html">← Vorheriger Monat</a>
+  {% endif %}
+  {% if next_key %}
+    {% set next_year, next_month = next_key.split('/') %}
+    <a href="../../feed/{{ next_year }}/{{ next_month }}.html">Nächster Monat →</a>
+  {% endif %}
+</div>
+<!-- Posts -->
+<div class="grid">
+    {% for post in posts %}
+    <div class="post" id="{{ post.shortcode }}">
+        <h4><a href="{{ post.username }}/index.html">@{{ post.username }}</a></h4>
+        {% if post.images %}
+        <div class="image-gallery">
+            {% for image in post.images %}
+            {% if image.endswith('.mp4') %}
+                <video class="post-video" controls loading="lazy">
+                    <source src="../../../../{{ image }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            {% else %}
+                <div class="image-item">
+                    <img src="../../../../{{ image }}" alt="{{ post.accessibility_caption }}" loading="lazy">
+                </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% if post.caption %}<div class="caption">{{ post.caption }}</div>{% endif %}
+        <div class="stats">
+            <span>❤️ {% if post.like_count %}{{ post.like_count }}{% else %}❌{% endif %}</span>
+            <span>💬 {% if post.comments %}{{ post.comments }}{% else %}0{% endif %}</span>
+            <span>📅 {{ post.date }}</span>
+        </div>
+        <div class="stats">Shortcode: {{ post.shortcode }}</div>
+        <div class="stats">Type: {{ post.type }}</div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

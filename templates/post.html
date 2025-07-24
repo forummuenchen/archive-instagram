@@ -1,9 +1,27 @@
 {% extends "base.html" %}
 
-{% block title %}{{ year }} - {{ account_name }} - Instagram-Archiv{% endblock %}
+{% block title %}
+
+  {% if is_tagged %}
+    Tagged 
+  {% elif is_highlight %}
+    Highlights {{ year }}
+  {% else %}
+    {{ year }}
+  {% endif %}
+ - {{ account_name }} - Instagram-Archiv{% endblock %}
 
 {% block header %}
 <h1><a href="index.html">{{ account_name }}</a></h1>
+<h2>
+    {% if is_tagged %}
+      Tagged Posts
+    {% elif is_highlight %}
+      Highlights
+    {% else %}
+      Posts
+    {% endif %}
+</h2>
 {% endblock %}
 
 {% block breadcrumb %}
@@ -15,8 +33,10 @@
 {% block content %}
 <nav class="navigation">
     {% for this_year in all_years %}
-    <a href="{{ this_year }}{% if is_tagged %}_tagged{% endif %}.html" {% if this_year==year
-        %}style="font-weight: bold;" {% endif %}>{{ this_year }}{% if is_tagged %} (Tagged){% endif %}</a>
+    <a href="{{ this_year }}{% if is_tagged %}_tagged{% elif is_highlight %}_highlight{% endif %}.html" {% if this_year==year %}style="font-weight: bold;" {% endif %}>
+  {{ this_year }}
+  {% if is_tagged %} (Tagged){% elif is_highlight %} {% endif %}
+</a>
     {% endfor %}
 </nav>
 
@@ -39,17 +59,30 @@
             {% endfor %}
         </div>
         {% endif %}
-        <div class="caption">{{ post.caption }}</div>
+        {% if post.caption %}<div class="caption">{{ post.caption }}</div>{% endif %}
+        
+        {% if post.is_story %}
         <div class="stats">
-            <span>❤️ {{ post.like_count }}</span>
-            <span>💬 {{ post.comments }}</span>
+            <span>Post was a story</span>
             <span>📅 {{ post.date }}</span>
-            <a href="https://instagram.com/p/{{ post.shortcode }}" target="_blank">Quelle</a>
         </div>
-        {% if post.tagged_users %}
+        {% else %}
+        <div class="stats">
+            <span>❤️  {% if post.like_count %} {{ post.like_count }} {% else %} ❌ {% endif %}</span>
+            <span>💬 {% if post.comments %} {{ post.comments }} {% else %} 0 {% endif %}</span>
+
+            <span>📅 {{ post.date }}</span>
+        </div>
+        {% endif %}
+        {% if post.location_name %}<div class="stats"><span>📍 {{ post.location_name}}</span></div>{% endif %}
+         
+
+        {% if post.owner %}
         <div class="stats">
             <span>Geposted von: <a href='https://instagram.com/{{ post.owner }}'>{{ post.owner }}</a></span>
         </div>
+        {% endif %}
+        {% if post.tagged_users %}
         <div class="stats">
             <span>Tagged: 
                 {% for user in post.tagged_users %}
@@ -58,17 +91,49 @@
             </span>
         </div>
         {% endif %}
+
+        {% if post.mentioned_users %}
         <div class="stats">
-            <a href="#{{ post.shortcode }}">Link to this post</a>
+            <span>Mentioned: 
+                {% for user in post.mentioned_users %}
+                <a href="https://instagram.com/{{ user }}" target="_blank">{{ user }}</a>{% if not loop.last %}, {% endif %}
+                {% endfor %}
+            </span>
         </div>
+        {% endif %}
+
+        {% if post.commented_users %}
+        <div class="stats">
+            <span>Commented by: 
+                {% for user in post.commented_users %}
+                <a href="https://instagram.com/{{ user }}" target="_blank">{{ user }}</a>{% if not loop.last %}, {% endif %}
+                {% endfor %}
+            </span>
+        </div>
+        {% endif %}
+
+        <div class="stats">
+        <span><a href="#{{ post.shortcode }}">Archive Link</a></span>
+{% if post.is_story and not post.reel_id %}
+  <!-- Kein Link anzeigen, wenn Story aber keine reel_id -->
+{% elif post.reel_id %}
+ <span>⚠️ <a href="https://instagram.com/stories/highlights/{{ post.reel_id }}" target="_blank">Quelle</a></span>
+{% else %}
+  <span><a href="https://instagram.com/p/{{ post.shortcode }}" target="_blank">Quelle</a></span>
+{% endif %}
+        </div>
+
+        <div class="stats">Shortcode: {{ post.shortcode }} </div>
     </div>
     {% endfor %}
 </div>
 
-<div class="navigation">
-    {% for y in all_years %}
-    <a href="{{ y }}{% if is_tagged %}_tagged{% endif %}.html" {% if y==year %}style="font-weight: bold;" {% endif %}>{{
-        y }}{% if is_tagged %} (Tagged){% endif %}</a>
+<nav class="navigation">
+    {% for this_year in all_years %}
+    <a href="{{ this_year }}{% if is_tagged %}_tagged{% elif is_highlight %}_highlight{% endif %}.html" {% if this_year==year %}style="font-weight: bold;" {% endif %}>
+  {{ this_year }}
+  {% if is_tagged %} (Tagged){% elif is_highlight %} {% endif %}
+</a>
     {% endfor %}
-</div>
+</nav>
 {% endblock %}

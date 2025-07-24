@@ -1,20 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Instagram Archive</title>
-    <link rel="stylesheet" href="static/css/styles.css">
-</head>
-
-<body>
+    <link rel="stylesheet" href="static/css/styles.css" />
+  </head>
+  <body>
     <h1>Instagram Archive</h1>
-    <ul>
-        {% for account in accounts %}
-        <li><a href="{{ account.name }}/index.html">{{ account.name }}</a> - {{ account.posts }} posts</li>
-        {% endfor %}
-    </ul>
-</body>
 
+    <div class="attention">
+      <strong>Hinweis:</strong> Dieses Archiv enthält Posts, Highlights - und
+      falls gerade zum richtigen Zeitpunkt die Daten abgefragt wurden - auch
+      Storys von Instagram-Accounts. Außerdem Posts, auf denen der Account
+      getagged wurde. Es kann sein, dass nicht alle Inhalte gesichert sind.
+    </div>
+    <h2>Posts pro Monat</h2>
+    <p>Wähle eine Monat und bekomme alle Posts aller Accounts in diesem Archiv.</p>
+    <label for="month-feed-select">Monatsübersicht:</label>
+    <select id="month-feed-select" onchange="window.location.href=this.value;">
+      <option value="">Monat wählen…</option>
+      {% for key in all_months %}
+        {% set y, m = key.split('/') %}
+        <option value="feed/{{ y }}/{{ m }}.html">{{ m }}/{{ y }}</option>
+      {% endfor %}
+    </select>
+    <h2>Post pro Account</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Account</th>
+          <th>Posts</th>
+          <th>Tagged Posts</th>
+          <th>Highlights</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for account in accounts %} {% if account in counts %}
+        <tr>
+          <td><a href="{{ account }}/index.html">{{ account }}</a></td>
+          <td>{{ counts[account]['post'] | default(0) }}</td>
+          <td>{{ counts[account]['tagged'] | default(0) }}</td>
+          <td>{{ counts[account]['highlight'] | default(0) }}</td>
+        </tr>
+        {% endif %} {% endfor %}
+      </tbody>
+    </table>
+  </body>
 </html>

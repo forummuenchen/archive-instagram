@@ -1,54 +1,85 @@
-{% extends "base.html" %}
-
-{% block title %}{{ account_name }} - Instagram-Archiv{% endblock %}
+{% extends "base.html" %} {% block title %}{{ account_name }} - Instagram-Archiv{% endblock %} 
 
 {% block breadcrumb %}
-    <a href="../index.html">Home</a> / 
-    <a href="index.html">{{ account_name }}</a> 
-{% endblock %}
-
-
+<a href="../index.html">Home</a> /
+<a href="index.html">{{ account_name }}</a>
+{% endblock %} 
 
 {% block header %}
-<h1>{{ profile.full_name }}</h1>
-<h2><a href = "https://instagram.com/{{ account_name }}", target = "_blank">@{{ account_name }}</a></h2>
-<img src="../../{{ profile.profile_img }}" alt="@{{ account_name }}s profile picture" style="height: 100px; width: 100px;">
-{% endblock %}
-
-{% block content %}
+<h1>
+  <a href="https://instagram.com/{{ account_name }}" target="_blank"
+    >@{{ account_name }}</a
+  >
+</h1>
+<h2>{{ profile.full_name }}</h2>
+<img
+  src="../../{{ profile_img }}"
+  alt="@{{ account_name }}s profile picture"
+  style="height: 100px; width: 100px"
+/>
+{% endblock %} {% block content %}
+<p>Zuletzt archiviert: {{ profile.last_update }}</p>
 <section>
-    <h2>Informationen zum Profil</h2>
-    <p>Bio: {{ profile.biography }}</p>
-    <p>Link: <a href="{{ profile.bio_links }}">{{ profile.bio_links }}</a></p>
-    <p>Follower: {{ profile.follow}}</p>
-    <p>Gefolgt: {{ profile.followed_by }}</p>
-    <!-- <p>Kategorie:</p>
-    <p>Telefon: {{ profile.contact_phone_number }}</p>
-    <p>Straße: {{ profile.address_json }}</p>
-    <p>Mail: {{ profile.public_email }}</p> -->
+  <h2>Informationen zum Profil</h2>
+  <p>Bio: {{ profile.biography }}</p>
+  {% if profile.external_url %}
+  <p>
+    Link: <a href="{{ profile.external_url }}">{{ profile.external_url }}</a>
+  </p>
+  {% endif %} {% if profile.business_address_json %}
+  <p>Adresse: {{ profile.business_address_json }}</p>
+  {% endif %}
+  <p>Follower: {{ profile.follower}}</p>
+  <p>Gefolgt: {{ profile.follows }}</p>
+  <p>
+    Privater Account: {% if profile['is_private'] %} ✅ {% else %} ❌ {% endif
+    %}
+  </p>
+  <p>
+    Verifizierter Account: {% if profile['is_verified'] %} ✅ {% else %} ❌ {%
+    endif %}
+  </p>
+  <p>
+    Professioneller Account: {% if profile['is_professional_account'] %} ✅ {%
+    else %} ❌ {% endif %}
+  </p>
 
-    <h2>Posts nach Jahren</h2>
-    <p>Posts, die @{{ account_name }} selbst gepostet hat.</p>
-    <nav>
-        <ul>
-            {% for year in years %}
-            <!-- Add year navigation items here -->
-            {% endfor %}
-        </ul>
-    </nav>
+  <h2>Posts nach Jahren</h2>
+  <p>Posts, die im Profil zu sehen sind</p>
+  <nav class="navigation_account">
+    {% for this_year in all_years |sort(reverse=True) %}
+    <li><a href="{{ this_year }}.html">{{ this_year }}</a></li>
+    {% endfor %}
+  </nav>
 
-    <nav class="navigation_account">
-        {% for this_year in all_years %}
-        <li><a href="{{ this_year }}.html">{{ this_year }}</a></li>
-        {% endfor %}
-    </nav>
-
-    <h2>Tagged Posts</h2>
-    <p>Posts, in denen @{{ account_name }} getagged wurde, nach Jahren.</p>
-    <nav class="navigation_account">
-        {% for tagged_this_year in tagged_all_years %}
-        <li><a href="{{ tagged_this_year }}_tagged.html">{{ tagged_this_year }}</a></li>
-        {% endfor %}
-    </nav>
+  {% if tagged_all_years %}
+  <h2>Tagged Posts</h2>
+  <p>Posts, in denen @{{ account_name }} getagged wurde, nach Jahren.</p>
+  <nav class="navigation_account">
+    {% for tagged_this_year in tagged_all_years |sort(reverse=True) %}
+    <li>
+      <a href="{{ tagged_this_year }}_tagged.html">{{ tagged_this_year }}</a>
+    </li>
+    {% endfor %}
+  </nav>
+  {% endif %} {% if highlight_posts_by_dir %}
+  <h2>Highlight Posts</h2>
+  <p>Posts, die @{{ account_name }} als Highlight gespeichert hat.</p>
+  <nav class="navigation_account">
+    {% for this_dir in highlight_posts_by_dir %}
+    <li><a href="{{ this_dir }}_highlight.html">{{ this_dir }}</a></li>
+    {% endfor %}
+  </nav>
+  {% endif %} {% if story_posts_by_year %}
+  <h2>Story Posts</h2>
+  <p>Posts, die @{{ account_name }} als Story gespeichert hat.</p>
+  <nav class="navigation_account">
+    {% for this_story_year in story_posts_by_year |sort(reverse=True) %}
+    <li>
+      <a href="{{ this_story_year }}_story.html">{{ this_story_year }}</a>
+    </li>
+    {% endfor %}
+  </nav>
+  {% endif %}
 </section>
 {% endblock %}
