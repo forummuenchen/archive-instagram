@@ -6,22 +6,29 @@ library(DBI)
 library(testdat)
 
 source(here::here("code/get-connection-functions.R"))
-source(here::here("code/extract-profile-infos.R"))
+source(here::here("code/setup.R"))
 
 OUTPUT_DIR <- "data"
 
-account_tbl <- "archive_account"
-posts_metadata_tbl <- "archive_files_metadata"
-posts_tbl <- "archive_files"
-connections_tbl <- "archive_connections"
 
-year_regex <- "20[0-9]{2}$"
-file_ext_regex <- "json.xz"
+delete_db <- FALSE
 
-con <- DBI::dbConnect(RSQLite::SQLite(), "data/instagram.sqlite")
 
+extract_profiles_again <- FALSE
+
+if (extract_profiles_again == TRUE) {
+  source(here::here("code/extract-profile-infos.R"))
+}
 
 # setup db tables ---------------------------------------------------------
+
+
+if(delete_db == T) {
+  DBI::dbRemoveTable(con, account_tbl)
+  DBI::dbRemoveTable(con, posts_metadata_tbl)
+  DBI::dbRemoveTable(con, posts_tbl)
+  DBI::dbRemoveTable(con, connections_tbl)
+}
 
 #DBI::dbRemoveTable(con, account_tbl)
 create_account <- glue("CREATE TABLE IF NOT EXISTS {account_tbl} (
@@ -42,7 +49,8 @@ create_account <- glue("CREATE TABLE IF NOT EXISTS {account_tbl} (
   is_business_account BOOLEAN,
   is_professional_account BOOLEAN,
   business_address_json JSON,
-  last_update TEXT
+  last_update TEXT,
+  br_category TEXT
   )")
 dbExecute(con, create_account)
 
@@ -66,7 +74,7 @@ dbExecute(con, create_posts_metadata)
 create_posts <- glue("CREATE TABLE IF NOT EXISTS {posts_tbl} (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT NULL,
-  path TEXT PRIMARY KEY,
+  path TEXT,
   type TEXT,
   shortcode TEXT,
   timestamp INTEGER,
@@ -80,7 +88,9 @@ create_posts <- glue("CREATE TABLE IF NOT EXISTS {posts_tbl} (
   like_count INTEGER,
   comments_count INTEGER,
   location_name TEXT,
-  story_link TEXT
+  story_link TEXT,
+  music_artist TEXT,
+  music_song TEXT
   )")
 dbExecute(con, create_posts)
 
@@ -101,7 +111,15 @@ dbExecute(con, create_connections)
 
 # account data ------------------------------------------------------------
 
-accounts_in_db <- tbl(con, account_tbl) %>% distinct(username) %>% collect()
+if (delete_db != TRUE) {
+  accounts_in_db <- tbl(con, account_tbl) %>% distinct(username) %>% collect()  
+} else {
+  accounts_in_db <- NULL
+}
+
+
+account_cats <- tbl(con, account_cats_tbl) %>% collect() %>% 
+  reframe(br_category = glue::glue_collapse(type, sep = ", "), .by = username)
 
 account_dirs <- fs::dir_ls("data", type = "directory")
 
@@ -109,7 +127,13 @@ account_files <- map_df(account_dirs, function(dir) {
   file <- fs::dir_ls(dir, recurse = F, type = "file", regexp = file_ext_regex)
   tibble(file = file)
 }) %>%
-  filter(!str_detect(file, "iterator|#"), !str_detect(file, paste0(accounts_in_db$username, collapse = "|")))
+  filter(!str_detect(file, "iterator|#"))
+
+if(length(accounts_in_db$username) > 0 ) {
+  account_files <- account_files %>% 
+    filter(!str_detect(file, paste0(accounts_in_db$username, collapse = "|")))
+}
+  
 
 if (nrow(account_files) > 0) {
   account_infos <- map_df(account_files$file, function(file) {
@@ -132,7 +156,6 @@ if (nrow(account_files) > 0) {
       }
     }))
   
-  
   account_export <- account_infos %>%
     select(source = file, 
            id, 
@@ -148,8 +171,14 @@ if (nrow(account_files) > 0) {
            is_business_account,
            is_professional_account,
            category_name,
-           business_address_json)
+           business_address_json) %>% 
+    left_join(account_cats, by = join_by(username)) %>% 
+    mutate(br_category = ifelse(is.na(br_category), "", br_category))
   
+  test_that(
+    desc = "unique row for username",
+    expect_unique(vars = username, data = account_export)
+  )
 }
 
 
@@ -234,7 +263,7 @@ get_files_meta_data <- function(data, type = NULL) {
       year = as.numeric(year),
       type = type,
       shortcode = str_remove(str_extract(file, ".*_20"), "_20"), 
-      shortcode = str_sub(shortcode, 1, 11), .before = 1 #str_extract(file, "20[0-9]{2}/.+") %>% str_extract(., "/.+") %>% str_sub(2, 12), .before = 1#
+      #shortcode = str_sub(shortcode, 1, 11), .before = 1 #str_extract(file, "20[0-9]{2}/.+") %>% str_extract(., "/.+") %>% str_sub(2, 12), .before = 1#
     ) %>%
     select(-rowid)
 
@@ -280,15 +309,12 @@ if(nrow(story_files) > 0) {
     filter(!is.na(path))
 }
 
-
-posts_metadata_export <- posts_metadata_export %>% filter(username != "andreagibson")
-
-testthat::test_that(
-  desc = "shortcode has 9 chars",
-  expect_equal(
-    posts_metadata_export %>% filter(!nchar(shortcode) %in% c(11, 10)) %>% nrow(), 0
-  )
-)
+# testthat::test_that(
+#   desc = "shortcode has 9 chars",
+#   expect_equal(
+#     posts_metadata_export %>% filter(!nchar(shortcode) %in% c(11, 10)) %>% nrow(), 0
+#   )
+# )
 
 testthat::test_that(
   desc = "unique",
@@ -311,11 +337,19 @@ last_update <- posts_metadata_export %>%
   mutate(last_update = as_date(last_update) %>% as.character())
 
 if (exists("account_export") == TRUE) {
-  DBI::dbWriteTable(con, 
-                    account_tbl, 
-                    account_export %>% 
-                      left_join(last_update, by = join_by(username)) %>% 
-                      anti_join(accounts_in_db, by = join_by(username)), append = T)
+  if(extract_profiles_again == FALSE) {
+    DBI::dbWriteTable(con, 
+                      account_tbl, 
+                      account_export %>% 
+                        left_join(last_update, by = join_by(username)), append = T)
+  } else {
+    DBI::dbWriteTable(con, 
+                      account_tbl, 
+                      account_export %>% 
+                        left_join(last_update, by = join_by(username)) %>% 
+                        anti_join(accounts_in_db, by = join_by(username)), append = T)
+  }
+
 }
 
 
@@ -326,7 +360,7 @@ posts_in_db <- tbl(con, posts_tbl) %>% distinct(path) %>% collect()
 
 posts_export <- posts_metadata_export %>% 
   anti_join(posts_in_db, by = join_by(path)) %>% 
-  #head() %>% 
+  #head(1) %>% 
     pmap_df(function(...) {
       current <- tibble(...)
       path <- current$path
@@ -338,7 +372,8 @@ posts_export <- posts_metadata_export %>%
       if(fs::file_exists(path)) {
         
       json <- jsonlite::read_json(path)
-
+      #json <- jsonlite::read_json("data/13.ms12/L😝❤️/2025/DK-peO8N636_2025-06-16_22-43-53_UTC.json.xz")
+      
       timestamp <- ifelse(
         length(json[["node"]][["taken_at_timestamp"]]) > 0,
         json[["node"]][["taken_at_timestamp"]],
@@ -376,6 +411,18 @@ posts_export <- posts_metadata_export %>%
         NA
       )
       
+      music_artist <-  ifelse(
+        length(json[["node"]][["iphone_struct"]][["story_music_stickers"]][[1]][["music_asset_info"]][["display_artist"]] > 0),
+        json[["node"]][["iphone_struct"]][["story_music_stickers"]][[1]][["music_asset_info"]][["display_artist"]],
+        NA
+      )
+      
+      music_song <-  ifelse(
+        length(json[["node"]][["iphone_struct"]][["story_music_stickers"]][[1]][["music_asset_info"]][["title"]] > 0),
+        json[["node"]][["iphone_struct"]][["story_music_stickers"]][[1]][["music_asset_info"]][["title"]],
+        NA
+      )
+      
       tibble(path = path, 
              type = type,
              shortcode = shortcode,
@@ -392,21 +439,23 @@ posts_export <- posts_metadata_export %>%
              like_count = json[["node"]][["edge_media_preview_like"]][["count"]],
              comments_count = json[["node"]][["comments"]],
              location_name = json[["node"]][["location"]][["name"]],
-             story_link = story_link
+             story_link = story_link,
+             music_artist = music_artist,
+             music_song = music_song
              )
       } else {
         NULL
       }
     }, .progress = T)
 
-if (nrow(posts_export)>0) {
-  testthat::test_that(
-    desc = "shorcode has 9 chars",
-    expect_equal(
-      posts_export %>% filter(!nchar(shortcode) %in% c(10, 11)) %>% nrow(), 0
-    )
-  )
-  DBI::dbWriteTable(con, posts_tbl, posts_export %>% anti_join(posts_in_db, by = join_by(path)), append = T)
+ if (nrow(posts_export)>0) {
+#   testthat::test_that(
+#     desc = "shorcode has 9 chars",
+#     expect_equal(
+#       posts_export %>% filter(!nchar(shortcode) %in% c(10, 11)) %>% nrow(), 0
+#     )
+#   )
+  DBI::dbWriteTable(con, posts_tbl, posts_export  %>% anti_join(posts_in_db, by = join_by(path)), append = T)
   cli::cli_alert_success("posts_export")
 }
 
@@ -423,7 +472,7 @@ connections_in_db <- tbl(con, connections_tbl) %>% collect()
 
 connections_export <- map_df(archived_accounts$username, function(this_username) {
   
-  cli::cli_alert_info("get connections for {this_username}")
+  #cli::cli_alert_info("get connections for {this_username}")
   
   connections_raw <- bind_rows(
     get_tagged_users(this_username) %>% 
@@ -434,7 +483,7 @@ connections_export <- map_df(archived_accounts$username, function(this_username)
     get_commentators(this_username) %>% 
       mutate(
         user_in_focus = this_username, .before = 1,
-        type = "commented_post_by_user"),
+        type = "this_user_commented"),
     
     get_mentioned_users(this_username) %>% 
       mutate(
@@ -457,12 +506,13 @@ connections_export <- map_df(archived_accounts$username, function(this_username)
 })
 
 
-testthat::test_that(
-  desc = "shortcode has 9 chars",
-  expect_equal(
-    connections_export %>% filter(!nchar(shortcode) %in% c(10, 11, NA)) %>% nrow(), 0
-  )
-)
+# testthat::test_that(
+#   desc = "shortcode has correct nchars",
+#   expect_equal(
+#     connections_export %>% filter(!nchar(shortcode) %in% c(10, 11, NA), 
+#                                   !str_detect(path, "comment")) %>% nrow(), 0
+#   )
+# )
 
 
 

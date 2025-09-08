@@ -32,9 +32,16 @@ class InstagramProcessor:
         Load accounts from the database.
         """
         cursor = con.cursor()
-        cursor.execute(f"SELECT DISTINCT username FROM {account_tbl}")
-        accounts = [row[0] for row in cursor.fetchall()]
-        
+        cursor.execute(f"SELECT DISTINCT username, full_name, biography, br_category, is_private FROM {account_tbl}")
+        accounts = []
+        for row in cursor.fetchall():
+            accounts.append({
+                "username": row[0],
+                "full_name": row[1],
+                "biography": row[2],
+                "br_category": row[3],
+                "is_private": row[4]
+            })
         return accounts
     
     def load_profile(self, con, username):
@@ -78,7 +85,7 @@ class InstagramProcessor:
         Load the count of posts types for all accounts from the database and return a dictionary.
         """
         cursor = con.cursor()
-        cursor.execute(f"SELECT username, type, COUNT(*) as count FROM {self.posts_metadata_tbl} GROUP BY type, username ORDER BY count DESC, username, type")
+        cursor.execute(f"SELECT DISTINCT username, type, COUNT(*) as count FROM {self.posts_metadata_tbl} GROUP BY type, username ORDER BY count DESC, username, type")
         count_res = cursor.fetchall()
 
         # create dict from query result
@@ -100,7 +107,7 @@ class InstagramProcessor:
 
         cursor.execute(
             f"""
-            SELECT p.*, m.year, m.username, m.type
+            SELECT DISTINCT p.*, m.year, m.username
             FROM {self.posts_tbl} p
             JOIN {self.posts_metadata_tbl} m ON p.path = m.path
             WHERE p.timestamp >= ?
@@ -119,7 +126,6 @@ class InstagramProcessor:
             post_dict['commented_users'] = commented_dict.get(post['shortcode'], [])
             post_dict['date'] = datetime.fromtimestamp(post['timestamp']).strftime('%Y-%m-%d')
             post_dict['username'] = post['username']
-            post_dict['type'] = post['type']
             post_dicts.append(post_dict)
         
         post_dicts.sort(key=lambda x: x['timestamp'], reverse=True)
@@ -130,7 +136,7 @@ class InstagramProcessor:
         cursor = con.cursor()
         cursor.execute(
             f"""
-            SELECT p.*, m.year
+            SELECT DISTINCT p.*, m.year
             FROM {self.posts_tbl} p
             JOIN {self.posts_metadata_tbl} m ON p.path = m.path
             WHERE m.username = ? AND p.type = ?
@@ -156,7 +162,7 @@ class InstagramProcessor:
         cursor = con.cursor()
         cursor.execute(
             f"""
-            SELECT p.*, m.dir
+            SELECT DISTINCT p.*, m.dir
             FROM {self.posts_tbl} p
             JOIN {self.posts_metadata_tbl} m ON p.path = m.path
             WHERE m.username = ? AND p.type = ?
@@ -211,7 +217,7 @@ class InstagramProcessor:
         return tagged_dict, mentioned_dict, commented_dict
     
     def generate_post_pages(self, account_name, posts_by_year, tagged_posts_by_year, highlight_posts_by_dir):
-        logging.info("Generating HTML pages...")
+        #logging.info("Generating HTML pages...")
 
         try:
             template = self.env.get_template("post.html")
@@ -279,7 +285,7 @@ class InstagramProcessor:
             #logging.info(f"Saved {output_path}")
 
     def generate_account_page(self, account_name, profile, all_years, tagged_all_years, highlight_posts_by_dir, story_posts_by_year):
-        logging.info(f"Generating account page... for {account_name}")
+        #logging.info(f"Generating account page... for {account_name}")
 
         try:
             template = self.env.get_template("account.html")
@@ -314,6 +320,8 @@ class InstagramProcessor:
             logging.error("Template 'index.html' not found in the 'templates' directory.")
             return
 
+        accounts = sorted(accounts, key=lambda a: a["username"].lower())
+
         html_content = template.render(
             accounts=accounts,
             counts=accounts_count,
@@ -325,16 +333,6 @@ class InstagramProcessor:
         self.write_to_file(output_path, html_content)
         #logging.info(f"Saved {output_path}")
 
-    def generate_feed_page(self, con):
-        posts = self.load_recent_posts(con, months=1)
-        try:
-            template = self.env.get_template("feed.html")
-        except TemplateNotFound:
-            logging.error("Template 'feed.html' not found in the 'templates' directory.")
-            return
-        html_content = template.render(posts=posts)
-        output_path = os.path.join(self.base_output_dir, "feed.html")
-        self.write_to_file(output_path, html_content)
 
     def get_posts_by_month(self, con, months=36):
         """
@@ -406,8 +404,8 @@ def main():
     con = sqlite3.connect(processor.db)
     con.row_factory = sqlite3.Row
     accounts = processor.load_accounts(con, processor.account_tbl)
-    exclude_accounts = ["andreagibson", "adrian_krenn", "misc", "test" "queer.im.oberland","queersteiger_berchtesgaden", "queer.im.oberland", "queer_niederbayern", "csdnuernberg", "csdebersberg", "csdaugsburg", "csd_bautzen", "csd_rosenheim","csd.dachau","kunterbuntamberg","queerpridewue","csd_regensburg","csd_schongau", "csdmuenchen", "#csdmuenchen"]
-    accounts = [a for a in accounts if a not in exclude_accounts]
+    exclude_accounts = ["andreagibson", "adrian_krenn", "misc", "test"]
+    accounts = [a for a in accounts if a["username"] not in exclude_accounts]
     accounts_count = processor.load_count_tbl(con)
 
     #accounts = ["niederbayerische_division"]#, "sportimsueden23", "1schulztim"] 
@@ -418,26 +416,22 @@ def main():
 
     for account in accounts:
         if account not in exclude_accounts:
-
-            logging.info(f"Processing account: {account}")
+            logging.info(f"Processing account: {account["username"]}")
             
-            profile_data = processor.load_profile(con, account)
-            posts_by_year = processor.load_posts_by_year(con, account, type="post")
-            tagged_posts_by_year = processor.load_posts_by_year(con, account, type="tagged")
-            story_posts_by_year = processor.load_posts_by_year(con, account, type="story")
-            highlight_posts_by_dir = processor.load_posts_by_dir(con, account, type="highlight")
-            #print("tagged_posts_by_year")
-            #print(posts_by_year)
+            profile_data = processor.load_profile(con, account["username"])
+            posts_by_year = processor.load_posts_by_year(con, account["username"], type="post")
+            tagged_posts_by_year = processor.load_posts_by_year(con, account["username"], type="tagged")
+            story_posts_by_year = processor.load_posts_by_year(con, account["username"], type="story")
+            highlight_posts_by_dir = processor.load_posts_by_dir(con, account["username"], type="highlight")
             # generate account pages
-            processor.generate_account_page(account, profile_data, posts_by_year, tagged_posts_by_year, highlight_posts_by_dir, story_posts_by_year)
+            processor.generate_account_page(account["username"], profile_data, posts_by_year, tagged_posts_by_year, highlight_posts_by_dir, story_posts_by_year)
             # generate post pages
-            processor.generate_post_pages(account, posts_by_year, tagged_posts_by_year, highlight_posts_by_dir)
+            processor.generate_post_pages(account["username"], posts_by_year, tagged_posts_by_year, highlight_posts_by_dir)
             # copy static files
             processor.copy_static_files()
 
-    processor.generate_monthly_feed_pages(con, )
+    processor.generate_monthly_feed_pages(con)
     processor.copy_static_files()
-    logging.info(f"Generated index and HTML pages for accounts: {', '.join(accounts)}")
     logging.info(f"Files are in the {processor.base_output_dir} directory")
     con.close()
 
