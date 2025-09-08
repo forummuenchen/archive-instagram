@@ -8,6 +8,8 @@
 
 {% block header %}
 <h1>Feed for {{ month }}/{{ year }}</h1>
+<p>Doppelungen erheben sich, wenn ein Post als Story und dann z.B. nochmal als Highlight gepostet wird.</p>
+
 {% endblock %}
 
 {% block content %}
@@ -36,32 +38,99 @@
 <div class="grid">
     {% for post in posts %}
     <div class="post" id="{{ post.shortcode }}">
-        <h4><a href="{{ post.username }}/index.html">@{{ post.username }}</a></h4>
+        <h4><a href="../../{{ post.username }}/index.html">@{{ post.username }}</a></h4>
         {% if post.images %}
         <div class="image-gallery">
             {% for image in post.images %}
             {% if image.endswith('.mp4') %}
                 <video class="post-video" controls loading="lazy">
-                    <source src="../../../../{{ image }}" type="video/mp4">
+                    <source src="../../../{{ image }}" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
             {% else %}
                 <div class="image-item">
-                    <img src="../../../../{{ image }}" alt="{{ post.accessibility_caption }}" loading="lazy">
+                    <img src="../../../{{ image }}" alt="{{ post.accessibility_caption }}" loading="lazy">
                 </div>
             {% endif %}
             {% endfor %}
         </div>
         {% endif %}
         {% if post.caption %}<div class="caption">{{ post.caption }}</div>{% endif %}
+        {% if post.is_story %}
         <div class="stats">
-            <span>❤️ {% if post.like_count %}{{ post.like_count }}{% else %}❌{% endif %}</span>
-            <span>💬 {% if post.comments %}{{ post.comments }}{% else %}0{% endif %}</span>
+            <span>Post was a story</span>
             <span>📅 {{ post.date }}</span>
         </div>
-        <div class="stats">Shortcode: {{ post.shortcode }}</div>
-        <div class="stats">Type: {{ post.type }}</div>
+        {% else %}
+        <div class="stats">
+            <span>❤️  {% if post.like_count %} {{ post.like_count }} {% else %} ❌ {% endif %}</span>
+            <span>💬 {% if post.comments %} {{ post.comments }} {% else %} 0 {% endif %}</span>
+
+            <span>📅 {{ post.date }}</span>
+        </div>
+        {% endif %}
+        {% if post.location_name %}<div class="stats"><span>📍 {{ post.location_name}}</span></div>{% endif %}
+         
+        {% if post.tagged_users %}
+        <div class="stats">
+            <span>Tagged: 
+                {% for user in post.tagged_users %}
+                <a href="https://instagram.com/{{ user }}" target="_blank">{{ user }}</a>{% if not loop.last %}, {% endif %}
+                {% endfor %}
+            </span>
+        </div>
+        {% endif %}
+
+        {% if post.mentioned_users %}
+        <div class="stats">
+            <span>Mentioned: 
+                {% for user in post.mentioned_users %}
+                <a href="https://instagram.com/{{ user }}" target="_blank">{{ user }}</a>{% if not loop.last %}, {% endif %}
+                {% endfor %}
+            </span>
+        </div>
+        {% endif %}
+
+        {% if post.commented_users %}
+        <div class="stats">
+            <span>Commented by: 
+                {% for user in post.commented_users %}
+                <a href="https://instagram.com/{{ user }}" target="_blank">{{ user }}</a>{% if not loop.last %}, {% endif %}
+                {% endfor %}
+            </span>
+        </div>
+        {% endif %}
+
+        {% if post.music_artist or post.music_song %}
+        <div class="stats">
+            <span>🎵 Musik: 
+                {% if post.music_artist and post.music_song %}
+                    {{ post.music_artist }} - {{ post.music_song }}
+                {% elif post.music_artist %}
+                    {{ post.music_artist }}
+                {% elif post.music_song %}
+                    {{ post.music_song }}
+                {% endif %}
+            </span>
+        </div>
+        {% endif %}
+
+        <div class="stats">
+            <span><a href="#{{ post.shortcode }}">Archive Link</a></span>
+            {% if post.is_story and not post.reel_id %}
+            <!-- Kein Link anzeigen, wenn Story aber keine reel_id -->
+            {% elif post.reel_id %}
+            <span>⚠️ <a href="https://instagram.com/stories/highlights/{{ post.reel_id }}" target="_blank">Quelle</a></span>
+            {% else %}
+            <span><a href="https://instagram.com/p/{{ post.shortcode }}" target="_blank">Quelle</a></span>
+            {% endif %}
+        </div>
+
+        <div class="stats">Shortcode: {{ post.shortcode }} </div>
+        <div class="stats">Type: {{ post.type }} </div>
+        
     </div>
+    
     {% endfor %}
 </div>
 {% endblock %}

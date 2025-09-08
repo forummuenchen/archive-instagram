@@ -5,6 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Instagram Archive</title>
     <link rel="stylesheet" href="static/css/styles.css" />
+    <style>
+.sort-arrow {
+  font-size: 0.9em;
+  margin-left: 0.2em;
+  color: #bbb;
+  transition: color 0.2s;
+}
+th.sorted .sort-arrow {
+  color: #222;
+}
+th {
+  user-select: none;
+}
+    </style>
   </head>
   <body>
     <h1>Instagram Archive</h1>
@@ -29,22 +43,69 @@
     <table>
       <thead>
         <tr>
-          <th>Account</th>
-          <th>Posts</th>
-          <th>Tagged Posts</th>
-          <th>Highlights</th>
+    <th data-type="string">Account <span class="sort-arrow">▲</span></th>
+    <th data-type="string">Full Name <span class="sort-arrow">▲</span></th>
+    <th data-type="string">Bio <span class="sort-arrow">▲</span></th>
+    <th data-type="string">Einordnung <span class="sort-arrow">▲</span></th>
+    <th data-type="string">Privat <span class="sort-arrow">▲</span></th>
+    <th data-type="number">Posts <span class="sort-arrow">▲</span></th>
+    <th data-type="number">Tagged Posts <span class="sort-arrow">▲</span></th>
+    <th data-type="number">Highlights <span class="sort-arrow">▲</span></th>
         </tr>
       </thead>
       <tbody>
-        {% for account in accounts %} {% if account in counts %}
-        <tr>
-          <td><a href="{{ account }}/index.html">{{ account }}</a></td>
-          <td>{{ counts[account]['post'] | default(0) }}</td>
-          <td>{{ counts[account]['tagged'] | default(0) }}</td>
-          <td>{{ counts[account]['highlight'] | default(0) }}</td>
-        </tr>
-        {% endif %} {% endfor %}
+        {% for account in accounts %}
+          {% if account.username in counts %}
+            <tr>
+              <td><a href="{{ account.username }}/index.html">{{ account.username }}</a></td>
+              <td>{{ account.full_name }}</td>
+              <td>{{ account.biography }}</td>
+              <td>{{ account.br_category }}</td>
+              <td>{% if account.is_private %} ✅ {% else %} ❌ {% endif %} </td>
+              <td>{{ counts[account.username]['post'] | default(0) }}</td>
+              <td>{{ counts[account.username]['tagged'] | default(0) }}</td>
+              <td>{{ counts[account.username]['highlight'] | default(0) }}</td>
+            </tr>
+          {% endif %}
+        {% endfor %}
       </tbody>
     </table>
   </body>
+  <script>
+document.addEventListener('DOMContentLoaded', function() {
+  const table = document.querySelector('table');
+  const headers = table.querySelectorAll('th');
+  let sortCol = 0, sortAsc = true;
+
+  headers.forEach((th, col) => {
+    th.style.cursor = 'pointer';
+    th.addEventListener('click', () => {
+      sortAsc = sortCol === col ? !sortAsc : true;
+      sortCol = col;
+      const type = th.dataset.type || "string";
+      const rows = Array.from(table.tBodies[0].rows);
+      rows.sort((a, b) => {
+        let v1 = a.cells[col].innerText.trim();
+        let v2 = b.cells[col].innerText.trim();
+        if(type === "number") {
+          v1 = parseInt(v1.replace(/\D/g, '')) || 0;
+          v2 = parseInt(v2.replace(/\D/g, '')) || 0;
+          return sortAsc ? v1 - v2 : v2 - v1;
+        } else {
+          return sortAsc ? v1.localeCompare(v2) : v2.localeCompare(v1);
+        }
+      });
+      rows.forEach(row => table.tBodies[0].appendChild(row));
+      headers.forEach((h, i) => {
+        h.classList.toggle('sorted', i === col);
+        const arrow = h.querySelector('.sort-arrow');
+        if (arrow) arrow.textContent = (i === col) ? (sortAsc ? '▲' : '▼') : '▲';
+      });
+    });
+  });
+
+  // Initial: erste Spalte als sortiert markieren
+  headers[0].classList.add('sorted');
+});
+</script>
 </html>

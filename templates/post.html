@@ -42,6 +42,7 @@
 
 <div class="grid">
     {% for post in posts %}
+    <!-- {% if post.tagged_users %}<h4><a href="../../{{ post.username }}/index.html">@{{ post.username }}</a></h4> {% endif %} -->
     <div class="post" id="{{ post.shortcode }}">
         {% if post.images %}
         <div class="image-gallery">
@@ -112,6 +113,20 @@
         </div>
         {% endif %}
 
+        {% if post.music_artist or post.music_song %}
+        <div class="stats">
+            <span>🎵 Musik: 
+                {% if post.music_artist and post.music_song %}
+                    {{ post.music_artist }} - {{ post.music_song }}
+                {% elif post.music_artist %}
+                    {{ post.music_artist }}
+                {% elif post.music_song %}
+                    {{ post.music_song }}
+                {% endif %}
+            </span>
+        </div>
+        {% endif %}
+
         <div class="stats">
         <span><a href="#{{ post.shortcode }}">Archive Link</a></span>
 {% if post.is_story and not post.reel_id %}
@@ -124,6 +139,9 @@
         </div>
 
         <div class="stats">Shortcode: {{ post.shortcode }} </div>
+        <!-- Debug: Zeige alle verfügbaren Post-Felder -->
+
+
     </div>
     {% endfor %}
 </div>
